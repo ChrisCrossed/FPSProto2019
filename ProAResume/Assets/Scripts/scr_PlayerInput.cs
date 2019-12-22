@@ -3,8 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using XInputDotNetPure;
 
+public enum ControllerType
+{
+    Controller,
+    KeyMouse
+}
+
 public struct PlayerInput
 {
+    private ControllerType controllerType;
+
     // Game Settings
     private float _f_zDir; // Forward or Backward
     private float _f_xDir; // Strafe Left or Right
@@ -24,6 +32,13 @@ public struct PlayerInput
     private ButtonState _Start;
     private ButtonState _Select;
 
+    internal ControllerType InputType
+    {
+        set { controllerType = value; }
+        get { return controllerType; }
+    }
+
+    #region Controller Input
     // Analog Sticks
     public float zDir
     {
@@ -167,6 +182,52 @@ public struct PlayerInput
         set { _Select = value; }
         get { return _Select; }
     }
+    #endregion
+
+    #region Keyboard Input
+    private bool _Button_Forward;
+    private bool _Button_Backward;
+    private bool _Button_Strafe_Left;
+    private bool _Button_Strafe_Right;
+
+    private bool _Button_Jump;
+    private bool _Button_Crouch;
+    private bool _Button_Sprint;
+
+    private bool _Button_Ability_1;
+    private bool _Button_Ability_2;
+    private bool _Button_Ability_3;
+    private bool _Button_Ability_Ult;
+
+    private bool _Button_Weapon_Primary;
+    private bool _Button_Weapon_Secondary;
+    private bool _Button_Weapon_Melee;
+
+    private Vector2 _v2_Mouse;
+    private bool _Button_Mouse_Left;
+    private bool _Button_Mouse_Right;
+
+    public bool KM_Forward
+    {
+        set { _Button_Forward = value; }
+        internal get { return _Button_Forward; }
+    }
+    public bool KM_Backward
+    {
+        set { _Button_Backward = value; }
+        internal get { return _Button_Backward; }
+    }
+    public bool KM_Strafe_Left
+    {
+        set { _Button_Strafe_Left = value; }
+        internal get { return _Button_Strafe_Left; }
+    }
+    public bool KM_Strafe_Right
+    {
+        set { _Button_Strafe_Right = value; }
+        internal get { return _Button_Strafe_Right; }
+    }
+    #endregion
 }
 
 public class scr_PlayerInput : MonoBehaviour
@@ -200,39 +261,59 @@ public class scr_PlayerInput : MonoBehaviour
     // Update is called once per frame
     protected void UpdatePlayerInput()
     {
-        #region Capture new input this frame
-        player_State = GamePad.GetState(player);
-        playerInput_OLD = playerInput; // Externally Referenced
-        #endregion
+        if(playerInput.InputType == ControllerType.Controller)
+        {
+            #region Capture new input this frame
+            player_State = GamePad.GetState(player);
+            playerInput_OLD = playerInput; // Externally Referenced
+            #endregion
 
-        #region Reset DPad Bools and Vector2
-        // Reset values
-        playerInput.DPad_Pressed_Up = ButtonState.Released;
-        playerInput.DPad_Pressed_Down = ButtonState.Released;
-        playerInput.DPad_Pressed_Left = ButtonState.Released;
-        playerInput.DPad_Pressed_Right = ButtonState.Released;
-        v2_DPad = new Vector2();
-        #endregion
+            #region Reset DPad Bools and Vector2
+            // Reset values
+            playerInput.DPad_Pressed_Up = ButtonState.Released;
+            playerInput.DPad_Pressed_Down = ButtonState.Released;
+            playerInput.DPad_Pressed_Left = ButtonState.Released;
+            playerInput.DPad_Pressed_Right = ButtonState.Released;
+            v2_DPad = new Vector2();
+            #endregion
 
-        if (player_State.DPad.Up == ButtonState.Pressed && player_State.DPad.Down == ButtonState.Released)
-        {
-            playerInput.DPad_Pressed_Up = ButtonState.Pressed;
-        }
-        if ( player_State.DPad.Down == ButtonState.Pressed && player_State.DPad.Up == ButtonState.Released )
-        {
-            playerInput.DPad_Pressed_Down = ButtonState.Pressed;
-        }
-        if (player_State.DPad.Left == ButtonState.Pressed && player_State.DPad.Right == ButtonState.Released)
-        {
-            playerInput.DPad_Pressed_Left = ButtonState.Pressed;
-        }
-        if (player_State.DPad.Right == ButtonState.Pressed && player_State.DPad.Left == ButtonState.Released)
-        {
-            playerInput.DPad_Pressed_Right = ButtonState.Pressed;
-        }
+            if (player_State.DPad.Up == ButtonState.Pressed && player_State.DPad.Down == ButtonState.Released)
+            {
+                playerInput.DPad_Pressed_Up = ButtonState.Pressed;
+            }
+            if (player_State.DPad.Down == ButtonState.Pressed && player_State.DPad.Up == ButtonState.Released)
+            {
+                playerInput.DPad_Pressed_Down = ButtonState.Pressed;
+            }
+            if (player_State.DPad.Left == ButtonState.Pressed && player_State.DPad.Right == ButtonState.Released)
+            {
+                playerInput.DPad_Pressed_Left = ButtonState.Pressed;
+            }
+            if (player_State.DPad.Right == ButtonState.Pressed && player_State.DPad.Left == ButtonState.Released)
+            {
+                playerInput.DPad_Pressed_Right = ButtonState.Pressed;
+            }
 
-        #region Replace old input from last frame
-        player_PrevState = player_State;
-        #endregion
+            #region Replace old input from last frame
+            player_PrevState = player_State;
+            #endregion
+        }
+        else if(playerInput.InputType == ControllerType.KeyMouse)
+        {
+            playerInput.KM_Forward = false;
+            playerInput.KM_Backward = false;
+            playerInput.KM_Strafe_Left = false;
+            playerInput.KM_Strafe_Right = false;
+
+            if (Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.S))
+                playerInput.KM_Forward = true;
+            if (Input.GetKey(KeyCode.S) && !Input.GetKey(KeyCode.W))
+                playerInput.KM_Backward = true;
+
+            if (Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))
+                playerInput.KM_Strafe_Left = true;
+            if (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))
+                playerInput.KM_Strafe_Right = true;
+        }
     }
 }
