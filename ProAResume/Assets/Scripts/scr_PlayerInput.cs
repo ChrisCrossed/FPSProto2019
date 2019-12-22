@@ -12,10 +12,10 @@ public struct PlayerInput
     private float _f_LookVert;
     private bool _b_JumpPressed;
     private bool _b_JumpHeld;
-    private bool _b_DPad_LeftPressed;
-    private bool _b_DPad_RightPressed;
-    private bool _b_DPad_UpPressed;
-    private bool _b_DPad_DownPressed;
+    private ButtonState _b_DPad_LeftPressed;
+    private ButtonState _b_DPad_RightPressed;
+    private ButtonState _b_DPad_UpPressed;
+    private ButtonState _b_DPad_DownPressed;
     private Vector2 _v2_DPad;
     private ButtonState _d_Button_A;
     private ButtonState _d_Button_B;
@@ -84,22 +84,22 @@ public struct PlayerInput
     }
 
     // DPad
-    public bool DPad_Pressed_Left
+    public ButtonState DPad_Pressed_Left
     {
         set { _b_DPad_LeftPressed = value; }
         get { return _b_DPad_LeftPressed; }
     }
-    public bool DPad_Pressed_Right
+    public ButtonState DPad_Pressed_Right
     {
         set { _b_DPad_RightPressed = value; }
         get { return _b_DPad_RightPressed; }
     }
-    public bool DPad_Pressed_Up
+    public ButtonState DPad_Pressed_Up
     {
         set { _b_DPad_UpPressed = value; }
         get { return _b_DPad_UpPressed; }
     }
-    public bool DPad_Pressed_Down
+    public ButtonState DPad_Pressed_Down
     {
         set { _b_DPad_DownPressed = value; }
         get { return _b_DPad_DownPressed; }
@@ -178,6 +178,7 @@ public class scr_PlayerInput : MonoBehaviour
 
     // PlayerInput struct
     internal PlayerInput playerInput;
+    internal PlayerInput playerInput_OLD;
 
     // Start is called before the first frame update
 
@@ -188,6 +189,7 @@ public class scr_PlayerInput : MonoBehaviour
     void Start()
     {
         playerInput = new PlayerInput();
+        playerInput_OLD = new PlayerInput();
         player_PrevState = new GamePadState();
 
         // Controller input
@@ -196,13 +198,41 @@ public class scr_PlayerInput : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    protected void UpdatePlayerInput()
     {
-         player_State = GamePad.GetState(player);
+        #region Capture new input this frame
+        player_State = GamePad.GetState(player);
+        playerInput_OLD = playerInput; // Externally Referenced
+        #endregion
 
-        if( player_State.DPad.Down == ButtonState.Pressed )
+        #region Reset DPad Bools and Vector2
+        // Reset values
+        playerInput.DPad_Pressed_Up = ButtonState.Released;
+        playerInput.DPad_Pressed_Down = ButtonState.Released;
+        playerInput.DPad_Pressed_Left = ButtonState.Released;
+        playerInput.DPad_Pressed_Right = ButtonState.Released;
+        v2_DPad = new Vector2();
+        #endregion
+
+        if (player_State.DPad.Up == ButtonState.Pressed && player_State.DPad.Down == ButtonState.Released)
         {
-            print("Connected - Forcing New Branch");
+            playerInput.DPad_Pressed_Up = ButtonState.Pressed;
         }
+        if ( player_State.DPad.Down == ButtonState.Pressed && player_State.DPad.Up == ButtonState.Released )
+        {
+            playerInput.DPad_Pressed_Down = ButtonState.Pressed;
+        }
+        if (player_State.DPad.Left == ButtonState.Pressed && player_State.DPad.Right == ButtonState.Released)
+        {
+            playerInput.DPad_Pressed_Left = ButtonState.Pressed;
+        }
+        if (player_State.DPad.Right == ButtonState.Pressed && player_State.DPad.Left == ButtonState.Released)
+        {
+            playerInput.DPad_Pressed_Right = ButtonState.Pressed;
+        }
+
+        #region Replace old input from last frame
+        player_PrevState = player_State;
+        #endregion
     }
 }
