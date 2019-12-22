@@ -17,9 +17,5 @@ public class scr_PlayerController : scr_PlayerInput
         this_RigidBody = this_Player.GetComponent<Rigidbody>();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    
 }
