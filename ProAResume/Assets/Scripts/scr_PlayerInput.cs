@@ -202,7 +202,7 @@ public class scr_PlayerInput : MonoBehaviour
 
         if( player_State.DPad.Down == ButtonState.Pressed )
         {
-            print("Connected");
+            print("Connected - Forcing New Branch");
         }
     }
 }
