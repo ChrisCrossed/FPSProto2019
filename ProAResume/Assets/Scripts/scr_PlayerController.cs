@@ -51,11 +51,8 @@ public class scr_PlayerController : scr_PlayerInput
         // Capture player input first
         base.UpdatePlayerInput();
 
-        // Store current velocity
-        Vector3 currVel = this_RigidBody.velocity;
-
         // Store current gravity velocity
-        float currVertVelocity = currVel.y;
+        float currVertVelocity = this_RigidBody.velocity.y;
 
         if (playerInput.InputType == ControllerType.Controller)
         {
@@ -70,13 +67,13 @@ public class scr_PlayerController : scr_PlayerInput
             MouseMoveUpdate();
 
             // Create velocity information
-            Vector2 tempVel = new Vector2();
+            Vector3 tempVel = new Vector3();
 
             #region Create initial movement vector
             if (playerInput.KM_Forward)
-                tempVel.y = 1.0f;
+                tempVel.z = 1.0f;
             else if(playerInput.KM_Backward)
-                tempVel.y = -1.0f;
+                tempVel.z = -1.0f;
 
             if (playerInput.KM_Strafe_Left)
                 tempVel.x = -1.0f;
@@ -87,12 +84,16 @@ public class scr_PlayerController : scr_PlayerInput
             // Normalize Vector
             tempVel.Normalize();
 
-            // Apply velocity to player
-            currVel.x = tempVel.x * 5.0f; // Horizontal/Strafing
-            currVel.y = currVertVelocity; // Vertical
-            currVel.z = tempVel.y * 5.0f; // Forward/Backward
+            Vector3 v3_PlayerVelocity = this_RigidBody.transform.rotation * tempVel;
 
-            this_RigidBody.velocity = currVel;
+            // Multiply by 'Speed' (Temp)
+            v3_PlayerVelocity *= 5.0f;
+
+            // Replace gravity
+            v3_PlayerVelocity.y = currVertVelocity;
+
+            // Assign new velocity to player
+            this_RigidBody.velocity = v3_PlayerVelocity;
         }
     }
 
