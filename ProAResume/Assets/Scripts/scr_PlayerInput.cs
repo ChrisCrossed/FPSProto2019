@@ -227,6 +227,22 @@ public struct PlayerInput
         set { _Button_Strafe_Right = value; }
         internal get { return _Button_Strafe_Right; }
     }
+
+    public Vector2 KM_Mouse_Movement
+    {
+        set { _v2_Mouse = value; }
+        internal get { return _v2_Mouse; }
+    }
+    public bool KM_Mouse_Left
+    {
+        set { _Button_Mouse_Left = value; }
+        internal get { return _Button_Mouse_Left; }
+    }
+    public bool KM_Mouse_Right
+    {
+        set { _Button_Mouse_Right = value; }
+        internal get { return _Button_Mouse_Right; }
+    }
     #endregion
 }
 
@@ -300,6 +316,7 @@ public class scr_PlayerInput : MonoBehaviour
         }
         else if(playerInput.InputType == ControllerType.KeyMouse)
         {
+            #region WASD
             playerInput.KM_Forward = false;
             playerInput.KM_Backward = false;
             playerInput.KM_Strafe_Left = false;
@@ -314,6 +331,32 @@ public class scr_PlayerInput : MonoBehaviour
                 playerInput.KM_Strafe_Left = true;
             if (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))
                 playerInput.KM_Strafe_Right = true;
+            #endregion
+
+            #region Mouse Input
+            // Reset Mouse Position
+            Vector2 tempMouse = new Vector2();
+            // playerInput.KM_Mouse_Movement = new Vector2();
+
+            // Mouse Horizontal Input
+            tempMouse.x = Input.GetAxis("Mouse X");
+
+            // Mouse Vertical Input
+            tempMouse.y = -Input.GetAxis("Mouse Y");
+
+            // Replace Mouse Input
+            playerInput.KM_Mouse_Movement = tempMouse;
+
+            // Mouse Left/Right Buttons
+            playerInput.KM_Mouse_Left = false;
+            playerInput.KM_Mouse_Right = false;
+
+            if (Input.GetAxis("Fire1") != 0f)
+                playerInput.KM_Mouse_Left = true;
+
+            if (Input.GetAxis("Fire2") != 0f)
+                playerInput.KM_Mouse_Right = true;
+            #endregion
         }
     }
 }
