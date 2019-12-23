@@ -2,6 +2,31 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+[System.Serializable]
+public struct PlayerSettings
+{
+    private float _mouseSensitivity;
+    private int _fieldOfView;
+
+    public void ResetInputSettings()
+    {
+        _mouseSensitivity = 1.0f;
+    }
+
+    public float MouseSensitivity
+    {
+        set { _mouseSensitivity = value; }
+        get { return _mouseSensitivity; }
+    }
+
+    public int FieldOfView
+    {
+        set { _fieldOfView = value; }
+        get { return _fieldOfView; }
+    }
+}
+
 // Player Requirements
 [RequireComponent(typeof(Rigidbody))]
 
@@ -19,6 +44,12 @@ public class scr_PlayerController : scr_PlayerInput
     [SerializeField]
     ControllerType currentInputType = ControllerType.Controller;
 
+    #region Player Settings
+    PlayerSettings playerSettings;
+    [SerializeField] [Range(0.01f, 10f)] float playerSettings_MouseSensitivity = 1.0f;
+    [SerializeField] [Range(60, 90)] int playerSettings_FieldOfView = 85;
+    #endregion
+
     // Mouse Camera Rotation Information
     float f_CameraVertRotation;
 
@@ -32,6 +63,11 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Set initial input as a controller. Should only be performed this once.
         SetControllerType = currentInputType;
+
+        // Temporary Input Settings Override
+        playerSettings.MouseSensitivity = playerSettings_MouseSensitivity;
+        playerSettings.FieldOfView = playerSettings_FieldOfView;
+        this_Camera.fieldOfView = playerSettings.FieldOfView;
     }
 
     public ControllerType SetControllerType
@@ -103,13 +139,13 @@ public class scr_PlayerController : scr_PlayerInput
         Vector3 playerRotation = this_RigidBody.transform.eulerAngles;
 
         // Capture mouse X/Y input
-        Vector2 tempMouseMove = playerInput.KM_Mouse_Movement;
+        Vector2 tempMouseMove = playerInput.KM_Mouse_Movement * playerSettings.MouseSensitivity;
 
         // Rotate character based on X
         playerRotation.y += tempMouseMove.x;
 
         // Rotate camera X & cap
-        f_CameraVertRotation += playerInput.KM_Mouse_Movement.y;
+        f_CameraVertRotation += playerInput.KM_Mouse_Movement.y * playerSettings.MouseSensitivity;
         f_CameraVertRotation = Mathf.Clamp(f_CameraVertRotation, -85f, 85f);
 
         Vector3 cameraEuler = this_Camera_Object.transform.eulerAngles;
