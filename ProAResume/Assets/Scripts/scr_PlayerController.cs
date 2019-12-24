@@ -165,7 +165,7 @@ public class scr_PlayerController : scr_PlayerInput
         Vector3 v3_OldVelocity = this_RigidBody.velocity;
         
         // Find new velocity, set to a high percentage of the two combined
-        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * MAX_MOVE_SPEED, 0.25f);
+        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * MAX_MOVE_SPEED, 0.10f);
 
         // Compare against itself
         float f_testVel_InputVel = Vector3.Magnitude(v3_PlayerVelocity * MAX_MOVE_SPEED);
