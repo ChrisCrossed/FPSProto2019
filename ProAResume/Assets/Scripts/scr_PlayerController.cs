@@ -50,6 +50,10 @@ public class scr_PlayerController : scr_PlayerInput
     [SerializeField] [Range(60, 90)] int playerSettings_FieldOfView = 85;
     #endregion
 
+    #region Movement Standards
+    [SerializeField] static float MAX_MOVE_SPEED = 5.0f;
+    #endregion
+
     // Mouse Camera Rotation Information
     float f_CameraVertRotation;
 
@@ -102,34 +106,8 @@ public class scr_PlayerController : scr_PlayerInput
             // Mouse Input first
             MouseMoveUpdate();
 
-            // Create velocity information
-            Vector3 tempVel = new Vector3();
-
-            #region Create initial movement vector
-            if (playerInput.KM_Forward)
-                tempVel.z = 1.0f;
-            else if(playerInput.KM_Backward)
-                tempVel.z = -1.0f;
-
-            if (playerInput.KM_Strafe_Left)
-                tempVel.x = -1.0f;
-            else if (playerInput.KM_Strafe_Right)
-                tempVel.x = 1.0f;
-            #endregion
-
-            // Normalize Vector
-            tempVel.Normalize();
-
-            Vector3 v3_PlayerVelocity = this_RigidBody.transform.rotation * tempVel;
-
-            // Multiply by 'Speed' (Temp)
-            v3_PlayerVelocity *= 5.0f;
-
-            // Replace gravity
-            v3_PlayerVelocity.y = currVertVelocity;
-
-            // Assign new velocity to player
-            this_RigidBody.velocity = v3_PlayerVelocity;
+            // Move player based on WASD input
+            CalculateMovementVelocity(currVertVelocity);
         }
     }
 
@@ -157,5 +135,55 @@ public class scr_PlayerController : scr_PlayerInput
         // Apply final rotation
         this_RigidBody.transform.eulerAngles = playerRotation;
         this_Camera_Object.transform.eulerAngles = cameraEuler;
+    }
+
+    void CalculateMovementVelocity( float f_CurrVertVelocity_ )
+    {
+        // Create velocity information
+        Vector3 tempVel = new Vector3();
+
+        #region Create initial movement vector
+        if (playerInput.KM_Forward)
+            tempVel.z = 1.0f;
+        else if (playerInput.KM_Backward)
+            tempVel.z = -1.0f;
+
+        if (playerInput.KM_Strafe_Left)
+            tempVel.x = -1.0f;
+        else if (playerInput.KM_Strafe_Right)
+            tempVel.x = 1.0f;
+        #endregion
+
+        // Normalize movement Vector
+        tempVel.Normalize();
+
+        // Adjust movement vector in-line with player rotation
+        Vector3 v3_PlayerVelocity = this_RigidBody.transform.rotation * tempVel;
+
+        #region Lerp current velocity into desired velocity
+        // Player velocity last frame
+        Vector3 v3_OldVelocity = this_RigidBody.velocity;
+        
+        // Find new velocity, set to a high percentage of the two combined
+        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * MAX_MOVE_SPEED, 0.25f);
+
+        // Compare against itself
+        float f_testVel_InputVel = Vector3.Magnitude(v3_PlayerVelocity * MAX_MOVE_SPEED);
+        float f_testVel_NewVel = Vector3.Magnitude(v3_NewVelocity);
+
+        if(f_testVel_InputVel != 0f)
+        {
+            if (f_testVel_NewVel / f_testVel_InputVel >= 0.94f)
+                v3_NewVelocity = tempVel * MAX_MOVE_SPEED;
+        }
+        #endregion
+
+        print(v3_NewVelocity.magnitude);
+
+        // Replace gravity
+        v3_NewVelocity.y = f_CurrVertVelocity_;
+
+        // Assign new velocity to player
+        this_RigidBody.velocity = v3_NewVelocity;
     }
 }
