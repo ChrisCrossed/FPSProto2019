@@ -346,6 +346,7 @@ public class scr_PlayerInput : MonoBehaviour
 
             #region Alternate Buttons
             playerInput.KM_Button_Jump = false;
+            playerInput.KM_Button_Crouch = false;
 
             if (Input.GetKey(KeyCode.Space))
                 playerInput.KM_Button_Jump = true;

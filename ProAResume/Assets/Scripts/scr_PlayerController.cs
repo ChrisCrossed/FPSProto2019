@@ -78,6 +78,7 @@ public class scr_PlayerController : scr_PlayerInput
 
     #region Raycast Objects
     GameObject[] rayObj_Jump = new GameObject[5];
+    GameObject[] rayObj_Crouch = new GameObject[5];
     #endregion
 
     #region Gun Object
@@ -122,6 +123,12 @@ public class scr_PlayerController : scr_PlayerInput
         rayObj_Jump[2] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_FR").gameObject;
         rayObj_Jump[3] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_BL").gameObject;
         rayObj_Jump[4] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_BR").gameObject;
+
+        rayObj_Crouch[0] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Crouch").gameObject;
+        rayObj_Crouch[1] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Crouch_FL").gameObject;
+        rayObj_Crouch[2] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Crouch_FR").gameObject;
+        rayObj_Crouch[3] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Crouch_BL").gameObject;
+        rayObj_Crouch[4] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Crouch_BR").gameObject;
         #endregion
 
         // Set initial input as a controller. Should only be performed this once.
@@ -157,6 +164,9 @@ public class scr_PlayerController : scr_PlayerInput
     {
         // Capture player input first
         base.UpdatePlayerInput();
+
+        // Test if player is crouching
+        CrouchCheck();
 
         // Determine if on ground
         RaycastHit rayHit = GroundRaycastCheck();
@@ -257,27 +267,50 @@ public class scr_PlayerController : scr_PlayerInput
     bool CrouchButtonState;
     static float PLAYER_CROUCH_HEIGHT = 0.5f;
     static float PLAYER_STAND_HEIGHT = 1.0f;
-    bool Crouch()
+    static float PLAYER_CROUCH_SCALE = 4f;
+    bool CrouchCheck()
     {
         bool isCrouching = false;
+
+        Vector3 v3_PlayerScale = this_Player.transform.localScale;
 
         if(playerInput.KM_Button_Crouch)
         {
             CrouchButtonState = true;
             PlayerCrouching = true;
 
-            // this_Player.transform.lossyScale
+            if(v3_PlayerScale.y > PLAYER_CROUCH_HEIGHT)
+            {
+                v3_PlayerScale.y -= Time.fixedDeltaTime * PLAYER_CROUCH_SCALE;
+
+                if ( v3_PlayerScale.y < PLAYER_CROUCH_HEIGHT ) v3_PlayerScale.y = PLAYER_CROUCH_HEIGHT;
+            }
         }
         else
         {
             CrouchButtonState = false;
 
-            // Raycast upward to ensure there's space
-            // Estimated raycast distance: Player's current height + (1.0f - current height) + 0.05f
+            if( v3_PlayerScale.y < PLAYER_STAND_HEIGHT)
+            {
+                // Check if there's no ceiling above the player (room to stand)
+                RaycastHit hit = CrouchRaycastCheck(v3_PlayerScale.y);
+
+                // If there's nothing above the player, stand
+                if (hit.collider == null)
+                {
+                    v3_PlayerScale.y += Time.fixedDeltaTime * PLAYER_CROUCH_SCALE;
+
+                    if (v3_PlayerScale.y > PLAYER_STAND_HEIGHT) v3_PlayerScale.y = PLAYER_STAND_HEIGHT;
+                }
+            }
         }
+
+        this_Player.transform.localScale = v3_PlayerScale;
 
         return isCrouching;
     }
+
+    
 
     void CalculateMovementVelocity( float f_CurrVertVelocity_ )
     {
@@ -440,7 +473,7 @@ public class scr_PlayerController : scr_PlayerInput
         RaycastHit hit = new RaycastHit();
 
         // Run through all Raycast objects to see if one finds the ground
-        for(int i = 0; i < rayObj_Jump.Length; ++i)
+        for (int i = 0; i < rayObj_Jump.Length; ++i)
         {
             if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hit, JumpRayCastDistance))
             {
@@ -448,7 +481,7 @@ public class scr_PlayerController : scr_PlayerInput
                 AssignGravity(true);
 
                 // Begin increasing ground touch timer
-                if ( GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
+                if (GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
                 {
                     GroundTouchTimer += Time.fixedDeltaTime;
                     if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
@@ -468,4 +501,24 @@ public class scr_PlayerController : scr_PlayerInput
 
         return hit;
     }
+
+    RaycastHit CrouchRaycastCheck( float playerHeight_ )
+    {
+        RaycastHit hit = new RaycastHit();
+
+        float CrouchRayCastDistance = 0.1f; // buffer (0.95 yPos + 0.05)
+        CrouchRayCastDistance += (PLAYER_STAND_HEIGHT - playerHeight_);
+
+        // Run through all Raycast objects to see if one finds the ground
+        for (int i = 0; i < rayObj_Crouch.Length; ++i)
+        {
+            if (Physics.Raycast(rayObj_Crouch[i].transform.position, Vector3.up, out hit, CrouchRayCastDistance))
+            {
+                break;
+            }
+        }
+
+        return hit;
+    }
+
 }
