@@ -133,6 +133,14 @@ public class scr_PlayerController : scr_PlayerInput
         this_Camera.fieldOfView = playerSettings.FieldOfView;
     }
 
+    void AssignGravity( bool b_IsOnGround_ )
+    {
+        if(b_IsOnGround_)
+            this_RigidBody.AddForce(Physics.gravity, ForceMode.Acceleration);
+        else
+            this_RigidBody.AddForce(Physics.gravity * 2f, ForceMode.Acceleration);
+    }
+
     public ControllerType SetControllerType
     {
         set
@@ -216,6 +224,7 @@ public class scr_PlayerController : scr_PlayerInput
 
     bool PlayerPressedJump;
     static float GROUND_TOUCH_TIMER_MAX = 0.1f;
+    bool JumpButtonState;
     bool TryJump( RaycastHit rayHit_ )
     {
         bool playerPressedJump = false;
@@ -224,11 +233,20 @@ public class scr_PlayerController : scr_PlayerInput
         {
             if (playerInput.KM_Button_Jump)
             {
-                // State that player pressed to jump
-                playerPressedJump = true;
+                if(!JumpButtonState)
+                {
+                    // State that player pressed to jump
+                    playerPressedJump = true;
+                    JumpButtonState = true;
 
-                // Setting to 'extreme' negative value to ensure player can't immediately 2x jump
-                GroundTouchTimer = -0.1f;
+                    // Setting to 'extreme' negative value to ensure player can't immediately 2x jump
+                    GroundTouchTimer = -0.05f;
+                }
+            }
+            else
+            {
+                // Old jump state for input comparison
+                JumpButtonState = false;
             }
         }
 
@@ -279,6 +297,10 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Replace gravity
         v3_NewVelocity.y = f_CurrVertVelocity_;
+        if(PlayerPressedJump)
+        {
+            v3_NewVelocity.y = 8f;
+        }
 
         // Assign new velocity to player
         this_RigidBody.velocity = v3_NewVelocity;
@@ -391,11 +413,16 @@ public class scr_PlayerController : scr_PlayerInput
     {
         RaycastHit hit = new RaycastHit();
 
+        // Run through all Raycast objects to see if one finds the ground
         for(int i = 0; i < rayObj_Jump.Length; ++i)
         {
             if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hit, JumpRayCastDistance))
             {
-                if( GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
+                // One found the ground (presumably [0]), so re-assign normal gravity
+                AssignGravity(true);
+
+                // Begin increasing ground touch timer
+                if ( GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
                 {
                     GroundTouchTimer += Time.fixedDeltaTime;
                     if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
@@ -406,7 +433,12 @@ public class scr_PlayerController : scr_PlayerInput
         }
 
         // If the RaycastHit doesn't detect an object, reset the timer
-        if (hit.collider == null) GroundTouchTimer = 0f;
+        if (hit.collider == null)
+        {
+            GroundTouchTimer = 0f;
+
+            AssignGravity(false);
+        }
 
         return hit;
     }
