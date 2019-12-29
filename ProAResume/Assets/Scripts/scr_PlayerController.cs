@@ -62,6 +62,14 @@ public class scr_PlayerController : scr_PlayerInput
     static float WEAPON_LERP_PERC_MAX = 0.25f;
     #endregion
 
+    #region Weapon Camera Lerp
+    GameObject go_WeaponCam;
+    Camera WeaponCam;
+    GameObject go_MDL_WeaponModel;
+    GameObject go_MDL_WeaponPos_Normal;
+    GameObject go_MDL_WeaponPos_ADS;
+    #endregion
+
     // Mouse Camera Rotation Information
     float f_CameraVertRotation;
 
@@ -73,13 +81,24 @@ public class scr_PlayerController : scr_PlayerInput
         Cursor.lockState = CursorLockMode.Locked;
 
         // Set defaults
+        #region Player Defaults
         this_Player = gameObject;
         this_RigidBody = this_Player.GetComponent<Rigidbody>();
         this_Camera_Object = this_Player.transform.Find("Main Camera").gameObject;
         this_Camera = this_Camera_Object.GetComponent<Camera>();
+        #endregion
+        #region Weapon Objects
         go_HUD_WeaponModel = this_Camera_Object.transform.Find("WeaponMdl").gameObject;
         go_HUD_WeaponPos_Normal = this_Camera_Object.transform.Find("WeapPnt_Normal").gameObject;
         go_HUD_WeaponPos_ADS = this_Camera_Object.transform.Find("WeapPnt_ADS").gameObject;
+        #endregion
+        #region Weapon Cam Objects
+        go_WeaponCam = GameObject.Find("WeaponCam").gameObject;
+        WeaponCam = go_WeaponCam.GetComponent<Camera>();
+        go_MDL_WeaponModel = go_WeaponCam.transform.Find("WeaponMdl").gameObject;
+        go_MDL_WeaponPos_Normal = go_WeaponCam.transform.Find("WeapPnt_Normal").gameObject;
+        go_MDL_WeaponPos_ADS = go_WeaponCam.transform.Find("WeapPnt_ADS").gameObject;
+        #endregion
 
         // Set initial input as a controller. Should only be performed this once.
         SetControllerType = currentInputType;
@@ -251,9 +270,15 @@ public class scr_PlayerController : scr_PlayerInput
             float f_LerpPerc = f_WeaponLerpTime / WEAPON_LERP_PERC_MAX;
             if( f_LerpPerc != f_LerpPerc_Old)
             {
+                #region Weapon Model Position
                 Vector3 v3_WeaponHUDPos = Vector3.Lerp(go_HUD_WeaponPos_Normal.transform.position, go_HUD_WeaponPos_ADS.transform.position, f_LerpPerc);
 
                 go_HUD_WeaponModel.transform.position = v3_WeaponHUDPos;
+                #endregion
+                #region Weapon Cam Position
+                Vector3 v3_WeaponCamPos = Vector3.Lerp(go_MDL_WeaponPos_Normal.transform.position, go_MDL_WeaponPos_ADS.transform.position, f_LerpPerc);
+                go_MDL_WeaponModel.transform.position = v3_WeaponCamPos;
+                #endregion
 
                 f_LerpPerc_Old = f_LerpPerc;
             }
