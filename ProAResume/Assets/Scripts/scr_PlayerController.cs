@@ -2,6 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum WeaponState
+{
+    Normal,
+    ADS,
+    Moving
+}
 
 [System.Serializable]
 public struct PlayerSettings
@@ -70,6 +76,10 @@ public class scr_PlayerController : scr_PlayerInput
     GameObject go_MDL_WeaponPos_ADS;
     #endregion
 
+    #region Gun Object
+    scr_GunFire GunWeapon;
+    #endregion
+
     // Mouse Camera Rotation Information
     float f_CameraVertRotation;
 
@@ -98,6 +108,9 @@ public class scr_PlayerController : scr_PlayerInput
         go_MDL_WeaponModel = go_WeaponCam.transform.Find("WeaponMdl").gameObject;
         go_MDL_WeaponPos_Normal = go_WeaponCam.transform.Find("WeapPnt_Normal").gameObject;
         go_MDL_WeaponPos_ADS = go_WeaponCam.transform.Find("WeapPnt_ADS").gameObject;
+        #endregion
+        #region GunWeapon
+        GunWeapon = GameObject.Find("Player").transform.Find("Main Camera").transform.Find("WeaponMdl").GetComponent<scr_GunFire>();
         #endregion
 
         // Set initial input as a controller. Should only be performed this once.
@@ -130,7 +143,13 @@ public class scr_PlayerController : scr_PlayerInput
         ApplyControllerBasedVelocity();
 
         // Determine if gun is switching positions
-        ADSCheck();
+        bool weaponMoving = ADSCheck();
+
+        // If gun isn't switching positions, determine if player is firing the gun
+        if(!weaponMoving)
+        {
+            FireGunCheck();
+        }
     }
 
     void ApplyControllerBasedVelocity()
@@ -245,21 +264,21 @@ public class scr_PlayerController : scr_PlayerInput
                 // If we're less than 100%, move the weapon
                 if (f_WeaponLerpTime < WEAPON_LERP_PERC_MAX)
                 {
-                    // Confirmed weapon is moving
                     GunMoving = true;
 
                     f_WeaponLerpTime += Time.fixedDeltaTime;
 
-                    if (f_WeaponLerpTime > WEAPON_LERP_PERC_MAX) f_WeaponLerpTime = WEAPON_LERP_PERC_MAX;
+                    if (f_WeaponLerpTime > WEAPON_LERP_PERC_MAX) 
+                        f_WeaponLerpTime = WEAPON_LERP_PERC_MAX;
                 }
             }
             else
             {
                 if (f_WeaponLerpTime > 0f)
                 {
-                    f_WeaponLerpTime -= Time.fixedDeltaTime;
-                    // Confirmed weapon is moving
                     GunMoving = true;
+
+                    f_WeaponLerpTime -= Time.fixedDeltaTime;
 
                     if (f_WeaponLerpTime < 0f) f_WeaponLerpTime = 0f;
                 }
@@ -282,14 +301,52 @@ public class scr_PlayerController : scr_PlayerInput
 
                 f_LerpPerc_Old = f_LerpPerc;
             }
-
             #endregion
+
+            // WeaponState Information
+            if (f_LerpPerc == 0.0f)
+                WeaponState = WeaponState.Normal;
+            else if (f_LerpPerc == 1.0f)
+                WeaponState = WeaponState.ADS;
+            else
+                WeaponState = WeaponState.Moving;
         }
         else
         {
 
         }
 
+        
+
         return GunMoving;
+    }
+
+    bool mouseLeft_Old;
+    void FireGunCheck()
+    {
+        // If the player fired this frame, but not a previous frame
+        if(playerInput.KM_Mouse_Left && (playerInput.KM_Mouse_Left != mouseLeft_Old))
+        {
+            if (GunWeapon)
+            {
+                GunWeapon.FireGun(WeaponState);
+            }
+        }
+
+        // Store last known position
+        mouseLeft_Old = playerInput.KM_Mouse_Left;
+    }
+
+    private WeaponState this_WeaponState;
+    public WeaponState WeaponState
+    {
+        get
+        {
+            return this_WeaponState;
+        }
+        private set
+        {
+            this_WeaponState = value;
+        }
     }
 }
