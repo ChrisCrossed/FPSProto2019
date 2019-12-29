@@ -54,6 +54,14 @@ public class scr_PlayerController : scr_PlayerInput
     [SerializeField] static float MAX_MOVE_SPEED = 5.0f;
     #endregion
 
+    #region Weapon Position Lerp
+    GameObject go_HUD_WeaponModel;
+    GameObject go_HUD_WeaponPos_Normal;
+    GameObject go_HUD_WeaponPos_ADS;
+    float f_WeaponLerpTime = 0f;
+    static float WEAPON_LERP_PERC_MAX = 0.25f;
+    #endregion
+
     // Mouse Camera Rotation Information
     float f_CameraVertRotation;
 
@@ -67,8 +75,11 @@ public class scr_PlayerController : scr_PlayerInput
         // Set defaults
         this_Player = gameObject;
         this_RigidBody = this_Player.GetComponent<Rigidbody>();
-        this_Camera_Object = this_Player.transform.GetChild(0).gameObject;
+        this_Camera_Object = this_Player.transform.Find("Main Camera").gameObject;
         this_Camera = this_Camera_Object.GetComponent<Camera>();
+        go_HUD_WeaponModel = this_Camera_Object.transform.Find("WeaponMdl").gameObject;
+        go_HUD_WeaponPos_Normal = this_Camera_Object.transform.Find("WeapPnt_Normal").gameObject;
+        go_HUD_WeaponPos_ADS = this_Camera_Object.transform.Find("WeapPnt_ADS").gameObject;
 
         // Set initial input as a controller. Should only be performed this once.
         SetControllerType = currentInputType;
@@ -96,6 +107,15 @@ public class scr_PlayerController : scr_PlayerInput
         // Capture player input first
         base.UpdatePlayerInput();
 
+        // Apply input-based velocity
+        ApplyControllerBasedVelocity();
+
+        // Determine if gun is switching positions
+        ADSCheck();
+    }
+
+    void ApplyControllerBasedVelocity()
+    {
         // Store current gravity velocity
         float currVertVelocity = this_RigidBody.velocity.y;
 
@@ -189,5 +209,62 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Assign new velocity to player
         this_RigidBody.velocity = v3_NewVelocity;
+    }
+
+    float f_LerpPerc_Old;
+    bool ADSCheck()
+    {
+        bool GunMoving = false;
+
+        // Fire/ADS Input
+        if (playerInput.InputType == ControllerType.KeyMouse)
+        {
+            #region Increase/Decrease & Cap weapon lerp timer
+            // If the button is held down, determine if weapon switches positions
+            if (playerInput.KM_Mouse_Right)
+            {
+                // If we're less than 100%, move the weapon
+                if (f_WeaponLerpTime < WEAPON_LERP_PERC_MAX)
+                {
+                    // Confirmed weapon is moving
+                    GunMoving = true;
+
+                    f_WeaponLerpTime += Time.fixedDeltaTime;
+
+                    if (f_WeaponLerpTime > WEAPON_LERP_PERC_MAX) f_WeaponLerpTime = WEAPON_LERP_PERC_MAX;
+                }
+            }
+            else
+            {
+                if (f_WeaponLerpTime > 0f)
+                {
+                    f_WeaponLerpTime -= Time.fixedDeltaTime;
+                    // Confirmed weapon is moving
+                    GunMoving = true;
+
+                    if (f_WeaponLerpTime < 0f) f_WeaponLerpTime = 0f;
+                }
+            }
+            #endregion
+
+            #region Lerp weapon position
+            float f_LerpPerc = f_WeaponLerpTime / WEAPON_LERP_PERC_MAX;
+            if( f_LerpPerc != f_LerpPerc_Old)
+            {
+                Vector3 v3_WeaponHUDPos = Vector3.Lerp(go_HUD_WeaponPos_Normal.transform.position, go_HUD_WeaponPos_ADS.transform.position, f_LerpPerc);
+
+                go_HUD_WeaponModel.transform.position = v3_WeaponHUDPos;
+
+                f_LerpPerc_Old = f_LerpPerc;
+            }
+
+            #endregion
+        }
+        else
+        {
+
+        }
+
+        return GunMoving;
     }
 }
