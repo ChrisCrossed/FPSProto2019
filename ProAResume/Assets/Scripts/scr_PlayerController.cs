@@ -60,6 +60,11 @@ public class scr_PlayerController : scr_PlayerInput
     // Start is called before the first frame update
     void Start()
     {
+        // Turn off Mouse icon
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+
+        // Set defaults
         this_Player = gameObject;
         this_RigidBody = this_Player.GetComponent<Rigidbody>();
         this_Camera_Object = this_Player.transform.GetChild(0).gameObject;
@@ -163,22 +168,21 @@ public class scr_PlayerController : scr_PlayerInput
         #region Lerp current velocity into desired velocity
         // Player velocity last frame
         Vector3 v3_OldVelocity = this_RigidBody.velocity;
-        
+
         // Find new velocity, set to a high percentage of the two combined
-        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * MAX_MOVE_SPEED, 0.10f);
+        float f_LerpRate = 10f * Time.deltaTime;
+        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * MAX_MOVE_SPEED, f_LerpRate);
 
-        // Compare against itself
-        float f_testVel_InputVel = Vector3.Magnitude(v3_PlayerVelocity * MAX_MOVE_SPEED);
-        float f_testVel_NewVel = Vector3.Magnitude(v3_NewVelocity);
-
-        if(f_testVel_InputVel != 0f)
-        {
-            if (f_testVel_NewVel / f_testVel_InputVel >= 0.94f)
-                v3_NewVelocity = tempVel * MAX_MOVE_SPEED;
-        }
+        // If nearly max speed, just cap at max speed
+        if (v3_NewVelocity.magnitude / MAX_MOVE_SPEED > 0.98f)
+            v3_NewVelocity = v3_NewVelocity.normalized * MAX_MOVE_SPEED;
+        
+        // If nearly zero, just set at zero.
+        if (v3_NewVelocity.magnitude <= 0.01f)
+            v3_NewVelocity = Vector3.zero;
         #endregion
 
-        print(v3_NewVelocity.magnitude);
+        // print(v3_NewVelocity.magnitude);
 
         // Replace gravity
         v3_NewVelocity.y = f_CurrVertVelocity_;
