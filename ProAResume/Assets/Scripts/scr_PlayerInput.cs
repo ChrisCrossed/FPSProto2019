@@ -228,6 +228,12 @@ public struct PlayerInput
         internal get { return _Button_Strafe_Right; }
     }
 
+    public bool KM_Button_Jump
+    {
+        set { _Button_Jump = value; }
+        internal get { return _Button_Jump; }
+    }
+
     public Vector2 KM_Mouse_Movement
     {
         set { _v2_Mouse = value; }
@@ -331,6 +337,13 @@ public class scr_PlayerInput : MonoBehaviour
                 playerInput.KM_Strafe_Left = true;
             if (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))
                 playerInput.KM_Strafe_Right = true;
+            #endregion
+
+            #region Alternate Buttons
+            playerInput.KM_Button_Jump = false;
+
+            if (Input.GetKey(KeyCode.Space))
+                playerInput.KM_Button_Jump = true;
             #endregion
 
             #region Mouse Input

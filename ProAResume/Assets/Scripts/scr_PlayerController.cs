@@ -76,6 +76,10 @@ public class scr_PlayerController : scr_PlayerInput
     GameObject go_MDL_WeaponPos_ADS;
     #endregion
 
+    #region Raycast Objects
+    GameObject[] rayObj_Jump = new GameObject[5];
+    #endregion
+
     #region Gun Object
     scr_GunFire GunWeapon;
     #endregion
@@ -112,6 +116,13 @@ public class scr_PlayerController : scr_PlayerInput
         #region GunWeapon
         GunWeapon = GameObject.Find("Player").transform.Find("Main Camera").transform.Find("WeaponMdl").GetComponent<scr_GunFire>();
         #endregion
+        #region Raycast Objects
+        rayObj_Jump[0] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump").gameObject;
+        rayObj_Jump[1] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_FL").gameObject;
+        rayObj_Jump[2] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_FR").gameObject;
+        rayObj_Jump[3] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_BL").gameObject;
+        rayObj_Jump[4] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_BR").gameObject;
+        #endregion
 
         // Set initial input as a controller. Should only be performed this once.
         SetControllerType = currentInputType;
@@ -139,6 +150,12 @@ public class scr_PlayerController : scr_PlayerInput
         // Capture player input first
         base.UpdatePlayerInput();
 
+        // Determine if on ground
+        RaycastHit rayHit = GroundRaycastCheck();
+
+        // Test if the player tries to jump
+        PlayerPressedJump = TryJump(rayHit);
+
         // Apply input-based velocity
         ApplyControllerBasedVelocity();
 
@@ -146,10 +163,7 @@ public class scr_PlayerController : scr_PlayerInput
         bool weaponMoving = ADSCheck();
 
         // If gun isn't switching positions, determine if player is firing the gun
-        if(!weaponMoving)
-        {
-            FireGunCheck();
-        }
+        if( !weaponMoving ) FireGunCheck();
     }
 
     void ApplyControllerBasedVelocity()
@@ -198,6 +212,27 @@ public class scr_PlayerController : scr_PlayerInput
         // Apply final rotation
         this_RigidBody.transform.eulerAngles = playerRotation;
         this_Camera_Object.transform.eulerAngles = cameraEuler;
+    }
+
+    bool PlayerPressedJump;
+    static float GROUND_TOUCH_TIMER_MAX = 0.1f;
+    bool TryJump( RaycastHit rayHit_ )
+    {
+        bool playerPressedJump = false;
+
+        if ( rayHit_.distance <= JumpRayCastDistance && GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX)
+        {
+            if (playerInput.KM_Button_Jump)
+            {
+                // State that player pressed to jump
+                playerPressedJump = true;
+
+                // Setting to 'extreme' negative value to ensure player can't immediately 2x jump
+                GroundTouchTimer = -0.1f;
+            }
+        }
+
+        return playerPressedJump;
     }
 
     void CalculateMovementVelocity( float f_CurrVertVelocity_ )
@@ -348,5 +383,31 @@ public class scr_PlayerController : scr_PlayerInput
         {
             this_WeaponState = value;
         }
+    }
+
+    float JumpRayCastDistance = 0.1f;
+    float GroundTouchTimer = 0f;
+    RaycastHit GroundRaycastCheck()
+    {
+        RaycastHit hit = new RaycastHit();
+
+        for(int i = 0; i < rayObj_Jump.Length; ++i)
+        {
+            if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hit, JumpRayCastDistance))
+            {
+                if( GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
+                {
+                    GroundTouchTimer += Time.fixedDeltaTime;
+                    if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
+                }
+
+                break;
+            }
+        }
+
+        // If the RaycastHit doesn't detect an object, reset the timer
+        if (hit.collider == null) GroundTouchTimer = 0f;
+
+        return hit;
     }
 }
