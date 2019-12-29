@@ -253,6 +253,32 @@ public class scr_PlayerController : scr_PlayerInput
         return playerPressedJump;
     }
 
+    bool PlayerCrouching;
+    bool CrouchButtonState;
+    static float PLAYER_CROUCH_HEIGHT = 0.5f;
+    static float PLAYER_STAND_HEIGHT = 1.0f;
+    bool Crouch()
+    {
+        bool isCrouching = false;
+
+        if(playerInput.KM_Button_Crouch)
+        {
+            CrouchButtonState = true;
+            PlayerCrouching = true;
+
+            // this_Player.transform.lossyScale
+        }
+        else
+        {
+            CrouchButtonState = false;
+
+            // Raycast upward to ensure there's space
+            // Estimated raycast distance: Player's current height + (1.0f - current height) + 0.05f
+        }
+
+        return isCrouching;
+    }
+
     void CalculateMovementVelocity( float f_CurrVertVelocity_ )
     {
         // Create velocity information
