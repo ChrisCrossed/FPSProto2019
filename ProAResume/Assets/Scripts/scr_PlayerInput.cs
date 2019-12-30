@@ -238,6 +238,11 @@ public struct PlayerInput
         set { _Button_Crouch = value; }
         internal get { return _Button_Crouch; }
     }
+    public bool KM_Button_Walk
+    {
+        set { _Button_Walk = value; }
+        internal get { return _Button_Walk; }
+    }
 
     public Vector2 KM_Mouse_Movement
     {
@@ -347,12 +352,16 @@ public class scr_PlayerInput : MonoBehaviour
             #region Alternate Buttons
             playerInput.KM_Button_Jump = false;
             playerInput.KM_Button_Crouch = false;
+            playerInput.KM_Button_Walk = false;
 
             if (Input.GetKey(KeyCode.Space))
                 playerInput.KM_Button_Jump = true;
 
             if (Input.GetKey(KeyCode.LeftControl))
                 playerInput.KM_Button_Crouch = true;
+            
+            if (Input.GetKey(KeyCode.LeftShift))
+                playerInput.KM_Button_Walk = true;
             #endregion
 
             #region Mouse Input

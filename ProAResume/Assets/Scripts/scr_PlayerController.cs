@@ -65,7 +65,8 @@ public class scr_PlayerController : scr_PlayerInput
     GameObject go_HUD_WeaponPos_Normal;
     GameObject go_HUD_WeaponPos_ADS;
     float f_WeaponLerpTime = 0f;
-    static float WEAPON_LERP_PERC_MAX = 0.25f;
+    static float WEAPON_LERP_PERC_MAX = 0.15f;
+    public AnimationCurve aCurve_WeaponLerp;
     #endregion
 
     #region Weapon Camera Lerp
@@ -178,7 +179,7 @@ public class scr_PlayerController : scr_PlayerInput
         }
 
         // Apply input-based velocity
-        ApplyControllerBasedVelocity(rayHit);
+        ApplyControllerBasedVelocity(isCrouching, rayHit);
 
         // Determine if gun is switching positions
         bool weaponMoving = ADSCheck();
@@ -187,7 +188,7 @@ public class scr_PlayerController : scr_PlayerInput
         if( !weaponMoving ) FireGunCheck();
     }
 
-    void ApplyControllerBasedVelocity(RaycastHit rayHit_)
+    void ApplyControllerBasedVelocity(bool _isCrouching, RaycastHit rayHit_)
     {
         // Store current gravity velocity
         float currVertVelocity = this_RigidBody.velocity.y;
@@ -205,7 +206,7 @@ public class scr_PlayerController : scr_PlayerInput
             MouseMoveUpdate();
 
             // Move player based on WASD input
-            CalculateMovementVelocity(currVertVelocity, rayHit_);
+            CalculateMovementVelocity(currVertVelocity, _isCrouching, rayHit_);
         }
     }
 
@@ -311,9 +312,8 @@ public class scr_PlayerController : scr_PlayerInput
     }
 
 
-    void CalculateMovementVelocity( float f_CurrVertVelocity_, RaycastHit rayHit_ )
+    void CalculateMovementVelocity( float f_CurrVertVelocity_, bool _isCrouching, RaycastHit rayHit_ )
     {
-        
         // Create velocity information
         Vector3 tempVel = new Vector3();
 
@@ -343,18 +343,31 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Find new velocity, set to a high percentage of the two combined
         float f_LerpRate = 10f * Time.fixedDeltaTime;
-        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * MAX_MOVE_SPEED, f_LerpRate);
+
+        // Determine potential max move speed based on stand/walk/crouch
+        float f_TempMaxSpeed = MAX_MOVE_SPEED;
+
+        // Can only alter ground velocity if the player is touching the ground
+        if (rayHit_.collider != null)
+        {
+            if (playerInput.KM_Button_Walk && !_isCrouching) f_TempMaxSpeed *= 0.65f;
+            if(_isCrouching) f_TempMaxSpeed *= 0.5f;
+        }
+
+        // If player is not holding the weapon at waist level, take a minor move speed penalty
+        if (WeaponState != WeaponState.Normal)
+            f_TempMaxSpeed *= 0.8f;
+
+        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * f_TempMaxSpeed, f_LerpRate);
 
         // If nearly max speed, just cap at max speed
-        if (v3_NewVelocity.magnitude / MAX_MOVE_SPEED > 0.98f)
-            v3_NewVelocity = v3_NewVelocity.normalized * MAX_MOVE_SPEED;
+        if (v3_NewVelocity.magnitude / f_TempMaxSpeed > 0.96f)
+            v3_NewVelocity = v3_NewVelocity.normalized * f_TempMaxSpeed;
         
         // If nearly zero, just set at zero.
         if (v3_NewVelocity.magnitude <= 0.01f)
             v3_NewVelocity = Vector3.zero;
         #endregion
-
-        // print(v3_NewVelocity.magnitude);
 
         // Replace gravity
         v3_NewVelocity.y = f_CurrVertVelocity_;
@@ -408,12 +421,13 @@ public class scr_PlayerController : scr_PlayerInput
             if( f_LerpPerc != f_LerpPerc_Old)
             {
                 #region Weapon Model Position
-                Vector3 v3_WeaponHUDPos = Vector3.Lerp(go_HUD_WeaponPos_Normal.transform.position, go_HUD_WeaponPos_ADS.transform.position, f_LerpPerc);
+                // Vector3 v3_WeaponHUDPos = Vector3.Lerp(go_HUD_WeaponPos_Normal.transform.position, go_HUD_WeaponPos_ADS.transform.position, f_LerpPerc);
+                Vector3 v3_WeaponHUDPos = Vector3.Lerp(go_HUD_WeaponPos_Normal.transform.position, go_HUD_WeaponPos_ADS.transform.position, aCurve_WeaponLerp.Evaluate(f_LerpPerc));
 
                 go_HUD_WeaponModel.transform.position = v3_WeaponHUDPos;
                 #endregion
                 #region Weapon Cam Position
-                Vector3 v3_WeaponCamPos = Vector3.Lerp(go_MDL_WeaponPos_Normal.transform.position, go_MDL_WeaponPos_ADS.transform.position, f_LerpPerc);
+                Vector3 v3_WeaponCamPos = Vector3.Lerp(go_MDL_WeaponPos_Normal.transform.position, go_MDL_WeaponPos_ADS.transform.position, aCurve_WeaponLerp.Evaluate(f_LerpPerc));
                 go_MDL_WeaponModel.transform.position = v3_WeaponCamPos;
                 #endregion
 
