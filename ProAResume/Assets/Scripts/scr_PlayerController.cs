@@ -466,33 +466,41 @@ public class scr_PlayerController : scr_PlayerInput
         }
     }
 
-    float JumpRayCastDistance = 0.1f;
+    float JumpRayCastDistance = 0.17f;
     float GroundTouchTimer = 0f;
     RaycastHit GroundRaycastCheck()
     {
         RaycastHit hit = new RaycastHit();
+        RaycastHit hitTemp = new RaycastHit();
+        float f_ShortestDistance = 5f;
 
         // Run through all Raycast objects to see if one finds the ground
         for (int i = 0; i < rayObj_Jump.Length; ++i)
         {
-            if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hit, JumpRayCastDistance))
+            if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hitTemp, JumpRayCastDistance))
             {
-                // One found the ground (presumably [0]), so re-assign normal gravity
-                AssignGravity(true);
-
-                // Begin increasing ground touch timer
-                if (GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
+                if(hitTemp.distance < f_ShortestDistance)
                 {
-                    GroundTouchTimer += Time.fixedDeltaTime;
-                    if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
+                    f_ShortestDistance = hitTemp.distance;
+                    hit = hitTemp;
                 }
-
-                break;
             }
         }
 
+        if(hit.collider != null)
+        {
+            // One found the ground (presumably [0]), so re-assign normal gravity
+            AssignGravity(true);
+
+            // Begin increasing ground touch timer
+            if (GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
+            {
+                GroundTouchTimer += Time.fixedDeltaTime;
+                if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
+            }
+        }
         // If the RaycastHit doesn't detect an object, reset the timer
-        if (hit.collider == null)
+        else
         {
             GroundTouchTimer = 0f;
 
