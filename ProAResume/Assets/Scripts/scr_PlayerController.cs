@@ -99,7 +99,7 @@ public class scr_PlayerController : scr_PlayerInput
         #region Player Defaults
         this_Player = gameObject;
         this_RigidBody = this_Player.GetComponent<Rigidbody>();
-        this_Camera_Object = this_Player.transform.Find("Main Camera").gameObject;
+        this_Camera_Object = this_Player.transform.Find("PlayerCamera").gameObject;
         this_Camera = this_Camera_Object.GetComponent<Camera>();
         #endregion
         #region Weapon Objects
@@ -115,7 +115,7 @@ public class scr_PlayerController : scr_PlayerInput
         go_MDL_WeaponPos_ADS = go_WeaponCam.transform.Find("WeapPnt_ADS").gameObject;
         #endregion
         #region GunWeapon
-        GunWeapon = GameObject.Find("Player").transform.Find("Main Camera").transform.Find("WeaponMdl").GetComponent<scr_GunFire>();
+        GunWeapon = GameObject.Find("Player").transform.Find("PlayerCamera").transform.Find("WeaponMdl").GetComponent<scr_GunFire>();
         #endregion
         #region Raycast Objects
         rayObj_Jump[0] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump").gameObject;
