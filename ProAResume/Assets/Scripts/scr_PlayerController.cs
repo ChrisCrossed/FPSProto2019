@@ -166,16 +166,19 @@ public class scr_PlayerController : scr_PlayerInput
         base.UpdatePlayerInput();
 
         // Test if player is crouching
-        CrouchCheck();
+        bool isCrouching = CrouchCheck();
 
         // Determine if on ground
         RaycastHit rayHit = GroundRaycastCheck();
 
         // Test if the player tries to jump
-        PlayerPressedJump = TryJump(rayHit);
+        if(!isCrouching)
+        {
+            PlayerPressedJump = TryJump(rayHit);
+        }
 
         // Apply input-based velocity
-        ApplyControllerBasedVelocity();
+        ApplyControllerBasedVelocity(rayHit);
 
         // Determine if gun is switching positions
         bool weaponMoving = ADSCheck();
@@ -184,7 +187,7 @@ public class scr_PlayerController : scr_PlayerInput
         if( !weaponMoving ) FireGunCheck();
     }
 
-    void ApplyControllerBasedVelocity()
+    void ApplyControllerBasedVelocity(RaycastHit rayHit_)
     {
         // Store current gravity velocity
         float currVertVelocity = this_RigidBody.velocity.y;
@@ -202,7 +205,7 @@ public class scr_PlayerController : scr_PlayerInput
             MouseMoveUpdate();
 
             // Move player based on WASD input
-            CalculateMovementVelocity(currVertVelocity);
+            CalculateMovementVelocity(currVertVelocity, rayHit_);
         }
     }
 
@@ -233,7 +236,7 @@ public class scr_PlayerController : scr_PlayerInput
     }
 
     bool PlayerPressedJump;
-    static float GROUND_TOUCH_TIMER_MAX = 0.1f;
+    static float GROUND_TOUCH_TIMER_MAX = 0.025f;
     bool JumpButtonState;
     bool TryJump( RaycastHit rayHit_ )
     {
@@ -263,8 +266,6 @@ public class scr_PlayerController : scr_PlayerInput
         return playerPressedJump;
     }
 
-    bool PlayerCrouching;
-    bool CrouchButtonState;
     static float PLAYER_CROUCH_HEIGHT = 0.5f;
     static float PLAYER_STAND_HEIGHT = 1.0f;
     static float PLAYER_CROUCH_SCALE = 4f;
@@ -276,8 +277,7 @@ public class scr_PlayerController : scr_PlayerInput
 
         if(playerInput.KM_Button_Crouch)
         {
-            CrouchButtonState = true;
-            PlayerCrouching = true;
+            isCrouching = true;
 
             if(v3_PlayerScale.y > PLAYER_CROUCH_HEIGHT)
             {
@@ -288,7 +288,7 @@ public class scr_PlayerController : scr_PlayerInput
         }
         else
         {
-            CrouchButtonState = false;
+            isCrouching = false;
 
             if( v3_PlayerScale.y < PLAYER_STAND_HEIGHT)
             {
@@ -310,10 +310,10 @@ public class scr_PlayerController : scr_PlayerInput
         return isCrouching;
     }
 
-    
 
-    void CalculateMovementVelocity( float f_CurrVertVelocity_ )
+    void CalculateMovementVelocity( float f_CurrVertVelocity_, RaycastHit rayHit_ )
     {
+        
         // Create velocity information
         Vector3 tempVel = new Vector3();
 
@@ -329,6 +329,8 @@ public class scr_PlayerController : scr_PlayerInput
             tempVel.x = 1.0f;
         #endregion
 
+        tempVel = Vector3.ProjectOnPlane(tempVel, rayHit_.normal);
+
         // Normalize movement Vector
         tempVel.Normalize();
 
@@ -340,7 +342,7 @@ public class scr_PlayerController : scr_PlayerInput
         Vector3 v3_OldVelocity = this_RigidBody.velocity;
 
         // Find new velocity, set to a high percentage of the two combined
-        float f_LerpRate = 10f * Time.deltaTime;
+        float f_LerpRate = 10f * Time.fixedDeltaTime;
         Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * MAX_MOVE_SPEED, f_LerpRate);
 
         // If nearly max speed, just cap at max speed
@@ -431,8 +433,6 @@ public class scr_PlayerController : scr_PlayerInput
         {
 
         }
-
-        
 
         return GunMoving;
     }
