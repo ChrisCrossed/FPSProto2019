@@ -311,7 +311,10 @@ public class scr_PlayerController : scr_PlayerInput
         return isCrouching;
     }
 
-
+    static float JUMP_VELOCITY = 8f;
+    static float WALK_PENALTY_PERC = 0.5f;
+    static float CROUCH_PENALTY_PERC = 0.4f;
+    static float ADS_PENALTY_PERC = 0.8f;
     void CalculateMovementVelocity( float f_CurrVertVelocity_, bool _isCrouching, RaycastHit rayHit_ )
     {
         // Create velocity information
@@ -350,14 +353,15 @@ public class scr_PlayerController : scr_PlayerInput
         // Can only alter ground velocity if the player is touching the ground
         if (rayHit_.collider != null)
         {
-            if (playerInput.KM_Button_Walk && !_isCrouching) f_TempMaxSpeed *= 0.65f;
-            if(_isCrouching) f_TempMaxSpeed *= 0.5f;
+            if (playerInput.KM_Button_Walk && !_isCrouching) f_TempMaxSpeed *= WALK_PENALTY_PERC;
+            if(_isCrouching) f_TempMaxSpeed *= CROUCH_PENALTY_PERC;
         }
 
         // If player is not holding the weapon at waist level, take a minor move speed penalty
         if (WeaponState != WeaponState.Normal)
-            f_TempMaxSpeed *= 0.8f;
+            f_TempMaxSpeed *= ADS_PENALTY_PERC;
 
+        // Smoothly transition from old velocity into new velocity
         Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * f_TempMaxSpeed, f_LerpRate);
 
         // If nearly max speed, just cap at max speed
@@ -365,7 +369,7 @@ public class scr_PlayerController : scr_PlayerInput
             v3_NewVelocity = v3_NewVelocity.normalized * f_TempMaxSpeed;
         
         // If nearly zero, just set at zero.
-        if (v3_NewVelocity.magnitude <= 0.01f)
+        else if (v3_NewVelocity.magnitude <= 0.01f)
             v3_NewVelocity = Vector3.zero;
         #endregion
 
@@ -373,7 +377,7 @@ public class scr_PlayerController : scr_PlayerInput
         v3_NewVelocity.y = f_CurrVertVelocity_;
         if(PlayerPressedJump)
         {
-            v3_NewVelocity.y = 8f;
+            v3_NewVelocity.y = JUMP_VELOCITY;
         }
 
         // Assign new velocity to player
