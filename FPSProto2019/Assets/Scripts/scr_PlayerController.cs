@@ -46,6 +46,7 @@ public class scr_PlayerController : scr_PlayerInput
     Rigidbody this_RigidBody;
     GameObject this_Camera_Object;
     Camera this_Camera;
+    
 
     [SerializeField]
     ControllerType currentInputType = ControllerType.Controller;
@@ -58,6 +59,8 @@ public class scr_PlayerController : scr_PlayerInput
 
     #region Movement Standards
     [SerializeField] static float MAX_MOVE_SPEED = 5.0f;
+    CapsuleCollider this_Collider;
+    [SerializeField] PhysicMaterial[] physMatList;
     #endregion
 
     #region Weapon Position Lerp
@@ -103,6 +106,9 @@ public class scr_PlayerController : scr_PlayerInput
         this_Camera_Object = this_Player.transform.Find("PlayerCamera").gameObject;
         this_Camera = this_Camera_Object.GetComponent<Camera>();
         #endregion
+        #region Movement Standards
+        this_Collider = this_Player.GetComponent<CapsuleCollider>();
+        #endregion
         #region Weapon Objects
         go_HUD_WeaponModel = this_Camera_Object.transform.Find("WeaponMdl").gameObject;
         go_HUD_WeaponPos_Normal = this_Camera_Object.transform.Find("WeapPnt_Normal").gameObject;
@@ -124,6 +130,7 @@ public class scr_PlayerController : scr_PlayerInput
         rayObj_Jump[2] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_FR").gameObject;
         rayObj_Jump[3] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_BL").gameObject;
         rayObj_Jump[4] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Jump_BR").gameObject;
+        
 
         rayObj_Crouch[0] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Crouch").gameObject;
         rayObj_Crouch[1] = this_Player.transform.Find("RaycastObjects").transform.Find("Ray_Crouch_FL").gameObject;
@@ -332,8 +339,6 @@ public class scr_PlayerController : scr_PlayerInput
             tempVel.x = 1.0f;
         #endregion
 
-        tempVel = Vector3.ProjectOnPlane(tempVel, rayHit_.normal);
-
         // Normalize movement Vector
         tempVel.Normalize();
 
@@ -379,6 +384,11 @@ public class scr_PlayerController : scr_PlayerInput
         {
             v3_NewVelocity.y = JUMP_VELOCITY;
         }
+
+        // If player not giving input && slope of ground is greater than certain degree, change PhysMat
+        bool hasInput = (tempVel != Vector3.zero);
+        bool hasSlope = (SlopeAngle > 0f);
+        ChangePhysMatStats(!hasInput && hasSlope);
 
         // Assign new velocity to player
         this_RigidBody.velocity = v3_NewVelocity;
@@ -486,23 +496,59 @@ public class scr_PlayerController : scr_PlayerInput
 
     float JumpRayCastDistance = 0.17f;
     float GroundTouchTimer = 0f;
+    float SlopeAngle;
     RaycastHit GroundRaycastCheck()
     {
         RaycastHit hit = new RaycastHit();
         RaycastHit hitTemp = new RaycastHit();
         float f_ShortestDistance = 5f;
+        SlopeAngle = 0f;
+
+        // Vector3's for slope checks
+        Vector3 centerVectorHitPos = new Vector3();
+        Vector3 highestVectorHitPos = new Vector3();
+
+        int tempInfo = 10;
 
         // Run through all Raycast objects to see if one finds the ground
         for (int i = 0; i < rayObj_Jump.Length; ++i)
         {
             if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hitTemp, JumpRayCastDistance))
             {
+                // Temporarily store the center ground hit position
+                if( i == 0 )
+                    centerVectorHitPos = hitTemp.point;
+
                 if(hitTemp.distance < f_ShortestDistance)
                 {
+                    tempInfo = i;
+                    print(hitTemp.collider.tag);
+
                     f_ShortestDistance = hitTemp.distance;
                     hit = hitTemp;
+
+                    // Also store information if a closer position is found than the center point for slope checking
+                    if( i > 0 ) // Only runs on non-center raycast points since 0 == center point
+                    {
+                        highestVectorHitPos = hitTemp.point;
+                    }
                 }
             }
+        }
+
+        print("Shortest: " + tempInfo);
+
+        // If highestVectorHitPos is filled, we're on an angle
+        if( highestVectorHitPos != Vector3.zero )
+        {
+            float heightDiff = Mathf.Abs(highestVectorHitPos.y - centerVectorHitPos.y);
+            if (heightDiff != 0f) SlopeAngle = 5f;
+
+            /*
+            float angle = Vector3.SignedAngle(highestVectorHitPos, centerVectorHitPos, Vector3.up);
+            if (angle < 0) angle *= -1;
+            SlopeAngle = angle;
+            */
         }
 
         if(hit.collider != null)
@@ -547,4 +593,31 @@ public class scr_PlayerController : scr_PlayerInput
         return hit;
     }
 
+    float frictionAmount = 0f;
+    void ChangePhysMatStats( bool increaseFriction_)
+    {
+        if (increaseFriction_)
+        {
+            if( frictionAmount < 1f)
+            {
+                frictionAmount += Time.deltaTime * 10f;
+                if (frictionAmount > 1f) frictionAmount = 1f;
+            }
+
+            this_Collider.material.frictionCombine = PhysicMaterialCombine.Maximum;
+        }
+        else
+        {
+            if( frictionAmount > 0f)
+            {
+                frictionAmount -= Time.deltaTime * 10f;
+                if (frictionAmount < 0f) frictionAmount = 0f;
+            }
+
+            this_Collider.material.frictionCombine = PhysicMaterialCombine.Minimum;
+        }
+
+        this_Collider.material.dynamicFriction = frictionAmount;
+        this_Collider.material.staticFriction = frictionAmount;
+    }
 }
