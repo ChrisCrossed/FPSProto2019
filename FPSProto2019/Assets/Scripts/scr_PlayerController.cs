@@ -61,6 +61,9 @@ public class scr_PlayerController : scr_PlayerInput
     [SerializeField] static float MAX_MOVE_SPEED = 5.0f;
     CapsuleCollider this_Collider;
     [SerializeField] PhysicMaterial[] physMatList;
+    
+    private Vector3 groundPointVelocity;
+    private Rigidbody groundRigidbody;
     #endregion
 
     #region Weapon Position Lerp
@@ -187,6 +190,30 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Apply input-based velocity
         ApplyControllerBasedVelocity(isCrouching, rayHit);
+        
+        // If on the ground, store the point velocity (at the rayhit point) of the ground object
+        if (rayHit.collider != null)
+        {
+            if (groundRigidbody != null)
+                this_RigidBody.MovePosition(this_RigidBody.position + groundPointVelocity * Time.fixedDeltaTime);
+
+            groundPointVelocity = Vector3.zero;
+
+            if (rayHit.rigidbody != null)
+            {
+                groundRigidbody = rayHit.rigidbody;
+                groundPointVelocity = rayHit.rigidbody.GetPointVelocity(rayHit.point);
+                groundPointVelocity.y = 0; //Don't worry about up/down (that's handled naturally)
+            }
+        }
+        else if (groundRigidbody != null) // If didn't hit rigidbody and we DID last frame (groundRigidbody is still defined), we just left the ground
+        {
+            groundRigidbody = null;
+        }
+        else // Didn't hit rigidbody this frame or last frame (still not be on ground)
+        {
+            this_RigidBody.MovePosition(this_RigidBody.position + groundPointVelocity * Time.fixedDeltaTime);
+        }
 
         // Determine if gun is switching positions
         bool weaponMoving = ADSCheck();
@@ -388,7 +415,7 @@ public class scr_PlayerController : scr_PlayerInput
         // If player not giving input && slope of ground is greater than certain degree, change PhysMat
         bool hasInput = (tempVel != Vector3.zero);
         bool hasSlope = (SlopeAngle > 0f);
-        ChangePhysMatStats(!hasInput && hasSlope);
+        ChangePhysMatStats((!hasInput && hasSlope), OnMovingPlatform);
 
         // Assign new velocity to player
         this_RigidBody.velocity = v3_NewVelocity;
@@ -494,9 +521,10 @@ public class scr_PlayerController : scr_PlayerInput
         }
     }
 
-    float JumpRayCastDistance = 0.17f;
+    public float JumpRayCastDistance = 0.17f;
     float GroundTouchTimer = 0f;
     float SlopeAngle;
+    bool OnMovingPlatform = false;
     RaycastHit GroundRaycastCheck()
     {
         RaycastHit hit = new RaycastHit();
@@ -536,23 +564,18 @@ public class scr_PlayerController : scr_PlayerInput
             }
         }
 
-        print("Shortest: " + tempInfo);
-
         // If highestVectorHitPos is filled, we're on an angle
         if( highestVectorHitPos != Vector3.zero )
         {
             float heightDiff = Mathf.Abs(highestVectorHitPos.y - centerVectorHitPos.y);
             if (heightDiff != 0f) SlopeAngle = 5f;
-
-            /*
-            float angle = Vector3.SignedAngle(highestVectorHitPos, centerVectorHitPos, Vector3.up);
-            if (angle < 0) angle *= -1;
-            SlopeAngle = angle;
-            */
         }
 
         if(hit.collider != null)
         {
+            // If player is standing on a moving platform, store it
+            if (hit.collider.tag == "MovingPlatform") OnMovingPlatform = true; else OnMovingPlatform = false;
+
             // One found the ground (presumably [0]), so re-assign normal gravity
             AssignGravity(true);
 
@@ -594,7 +617,7 @@ public class scr_PlayerController : scr_PlayerInput
     }
 
     float frictionAmount = 0f;
-    void ChangePhysMatStats( bool increaseFriction_)
+    void ChangePhysMatStats( bool increaseFriction_, bool onMovingPlatform_ )
     {
         if (increaseFriction_)
         {
@@ -608,10 +631,14 @@ public class scr_PlayerController : scr_PlayerInput
         }
         else
         {
-            if( frictionAmount > 0f)
+            // Slightly increase friction amount if player is on a moving platform
+            float tempFrictionAmount = 0f;
+            if (OnMovingPlatform) tempFrictionAmount = 0.15f;
+
+            if( frictionAmount != tempFrictionAmount)
             {
                 frictionAmount -= Time.deltaTime * 10f;
-                if (frictionAmount < 0f) frictionAmount = 0f;
+                if (frictionAmount < tempFrictionAmount) frictionAmount = tempFrictionAmount;
             }
 
             this_Collider.material.frictionCombine = PhysicMaterialCombine.Minimum;

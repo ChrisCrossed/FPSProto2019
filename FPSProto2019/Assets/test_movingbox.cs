@@ -20,8 +20,13 @@ public class test_movingbox : MonoBehaviour
         float newY = Mathf.Sin(f_Timer) * 5f;
         newY += startingYPos;
 
+        float newX = Mathf.Sin(f_Timer) * 5f;
+        newX += startingYPos;
+
         Vector3 newPos = gameObject.transform.position;
         newPos.y = newY;
-        gameObject.GetComponent<Rigidbody>().transform.position = newPos;
+        newPos.x = newX;
+        gameObject.GetComponent<Rigidbody>().MovePosition(newPos);
+        gameObject.GetComponent<Rigidbody>().MoveRotation(Quaternion.Euler(Vector3.up * Mathf.Sin(f_Timer) * 90));
     }
 }
