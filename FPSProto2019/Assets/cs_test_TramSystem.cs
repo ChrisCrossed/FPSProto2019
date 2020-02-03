@@ -8,6 +8,7 @@ public class cs_test_TramSystem : MonoBehaviour
     [SerializeField] bool ShowCheckpoints = true;
     [SerializeField] GameObject[] TramCheckpoints;
     Vector3[] TramCheckpointPositions;
+    Quaternion[] TramCheckpointRotations;
 
     [ExecuteInEditMode]
     private void OnDrawGizmos()
@@ -24,6 +25,10 @@ public class cs_test_TramSystem : MonoBehaviour
     public Vector3[] GetTramCheckpointPositions
     {
         get { return TramCheckpointPositions; }
+    }
+    public Quaternion[] GetTramCheckpointRotations
+    {
+        get { return TramCheckpointRotations; }
     }
 
     void Start()
@@ -45,11 +50,13 @@ public class cs_test_TramSystem : MonoBehaviour
     void LoadTramSystem()
     {
         TramCheckpointPositions = new Vector3[TramCheckpoints.Length];
+        TramCheckpointRotations = new Quaternion[TramCheckpoints.Length];
 
         // Convert object positions into Vector3 list
         for (int i = 0; i < TramCheckpoints.Length; ++i)
         {
             TramCheckpointPositions[i] = TramCheckpoints[i].transform.position;
+            TramCheckpointRotations[i] = TramCheckpoints[i].transform.rotation;
         }
     }
 }
