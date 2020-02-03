@@ -4,15 +4,19 @@ using UnityEngine;
 
 public class scr_InputTest : MonoBehaviour
 {
-    [SerializeField] GameObject[] wallObjects = new GameObject[4];
+    // Test scenario - Deprecated
+    // [SerializeField] GameObject[] wallObjects = new GameObject[4];
 
     // Start is called before the first frame update
     void Awake()
     {
+        // Test scenario - Deprecated
+        /*
         foreach (GameObject wall in wallObjects)
         {
             wall.gameObject.GetComponent<MeshRenderer>().enabled = false;
         }
+        */
     }
 
     private void Update()

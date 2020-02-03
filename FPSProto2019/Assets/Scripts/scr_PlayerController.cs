@@ -550,7 +550,6 @@ public class scr_PlayerController : scr_PlayerInput
                 if(hitTemp.distance < f_ShortestDistance)
                 {
                     tempInfo = i;
-                    print(hitTemp.collider.tag);
 
                     f_ShortestDistance = hitTemp.distance;
                     hit = hitTemp;
