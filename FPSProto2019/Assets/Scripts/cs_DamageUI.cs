@@ -41,6 +41,7 @@ public class cs_DamageUI : MonoBehaviour
 
         // Assign damage dealt
         damageDealt = damage_;
+        SetUITextDamage(damageDealt);
 
         // Turn text on visually
         SetUITextVisibility(true);

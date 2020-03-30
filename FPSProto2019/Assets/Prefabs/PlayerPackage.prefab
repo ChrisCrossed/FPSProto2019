@@ -417,6 +417,7 @@ MonoBehaviour:
     type: 3}
   aud_GunFire_Rifle_Normal: {fileID: 8300000, guid: 8581f806dddef8046b4942de05b897be,
     type: 3}
+  WeaponDMGAssumption: 162
 --- !u!1 &3284071422856444195
 GameObject:
   m_ObjectHideFlags: 0
@@ -1531,7 +1532,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 25
+  m_Text: 
 --- !u!114 &4217577205468848317
 MonoBehaviour:
   m_ObjectHideFlags: 0
