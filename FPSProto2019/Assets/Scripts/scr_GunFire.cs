@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class scr_GunFire : MonoBehaviour
 {
@@ -53,6 +54,11 @@ public class scr_GunFire : MonoBehaviour
         aud_GunfirePos.Play();
     }
 
+    float ThisFunction(RaycastHit o)
+    {
+        return o.distance;
+    }
+
     void RaycastToPoint()
     {
         int layerMask = LayerMask.GetMask("Default", "Enemy", "Bangable");
@@ -64,6 +70,11 @@ public class scr_GunFire : MonoBehaviour
         float wallBangReductionCap = 0.6f;
 
         hitArray = Physics.RaycastAll(CameraObj.transform.position, CameraObj.transform.forward, 250f, layerMask);
+
+        // Rearranges array based on distance since hitArray is unsorted.
+        hitArray = hitArray.OrderBy(o => o.distance).ToArray();
+        // TODO: Learn about Linq & Lambda Functions
+        // hitArray = hitArray.OrderBy(ThisFunction).ToArray();
 
         if (hitArray.Length > 0)
         {
@@ -77,13 +88,14 @@ public class scr_GunFire : MonoBehaviour
             // Reduce damage based on wallbangable surfaces
             if ( hitArray[i].collider.gameObject.layer != LayerMask.NameToLayer("Bangable"))
             {
+                if (hitArray[i].collider.gameObject.layer == LayerMask.NameToLayer("Default")) break;
+
                 if (hitArray[i].collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
                 {
                     // Calculate current damage based on wall-bangable surfaces
                     int totalDamage = Mathf.FloorToInt(WeaponDMGAssumption * (1f - damageReductionModifier));
 
                     // Calculate current damage based on body part
-                    // TODO: 
                     if (hitArray[i].collider.name == "CenterMass") totalDamage = Mathf.FloorToInt(totalDamage * 0.43f);
                     if (hitArray[i].collider.name == "OuterMass") totalDamage = Mathf.FloorToInt(totalDamage * 0.35f);
 
