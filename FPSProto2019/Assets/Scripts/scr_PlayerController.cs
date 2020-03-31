@@ -345,7 +345,7 @@ public class scr_PlayerController : scr_PlayerInput
         return isCrouching;
     }
 
-    static float JUMP_VELOCITY = 8f;
+    static float JUMP_VELOCITY = 7f;
     static float WALK_PENALTY_PERC = 0.5f;
     static float CROUCH_PENALTY_PERC = 0.4f;
     static float ADS_PENALTY_PERC = 0.8f;
