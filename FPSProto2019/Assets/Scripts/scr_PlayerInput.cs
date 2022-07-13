@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using XInputDotNetPure;
+using System.IO;
 
 public enum ControllerType
 {
@@ -243,7 +244,6 @@ public struct PlayerInput
         set { _Button_Walk = value; }
         internal get { return _Button_Walk; }
     }
-
     public Vector2 KM_Mouse_Movement
     {
         set { _v2_Mouse = value; }
@@ -260,6 +260,30 @@ public struct PlayerInput
         internal get { return _Button_Mouse_Right; }
     }
     #endregion
+
+    public void OverrideControlsWithOfficialControls()
+    {
+        #region Part 1 - Check for BackupKeybinds.json file
+        string output = "No file found";
+
+        string localAppData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData);
+
+        localAppData += "\\VALORANT\\Saved\\Config";
+
+        /* WORKS
+        foreach (string file in Directory.GetFiles(localAppData, "BackupKeybinds.json", SearchOption.AllDirectories))
+        {
+            return file;
+        }
+
+        return output;
+        */
+        #endregion
+
+        #region Part 2 - If file exists, overwrite default keys / mouse info
+        // https://forum.unity.com/threads/how-to-read-json-file.401306/
+        #endregion
+    }
 }
 
 public class scr_PlayerInput : MonoBehaviour

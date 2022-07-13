@@ -149,6 +149,8 @@ public class scr_PlayerController : scr_PlayerInput
         playerSettings.MouseSensitivity = playerSettings_MouseSensitivity;
         playerSettings.FieldOfView = playerSettings_FieldOfView;
         this_Camera.fieldOfView = playerSettings.FieldOfView;
+
+        playerInput.OverrideControlsWithOfficialControls();
     }
 
     void AssignGravity( bool b_IsOnGround_ )
