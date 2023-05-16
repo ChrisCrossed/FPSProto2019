@@ -151,6 +151,9 @@ public class scr_PlayerController : scr_PlayerInput
         this_Camera.fieldOfView = playerSettings.FieldOfView;
 
         playerInput.OverrideControlsWithOfficialControls();
+
+        // Set Update-based (Client-side) input vector defaults
+        v3_ClientSideUpdateVelocity = new Vector3();
     }
 
     void AssignGravity( bool b_IsOnGround_ )
@@ -173,26 +176,69 @@ public class scr_PlayerController : scr_PlayerInput
         }
     }
 
-    private void FixedUpdate()
+    Vector3 v3_ClientSideUpdateVelocity;
+    // Intending on treating 'Update' as 'Client Side' updates
+    private void Update()
     {
-        // Capture player input first
+        // Get player input values
         base.UpdatePlayerInput();
 
-        // Test if player is crouching
-        bool isCrouching = CrouchCheck();
+        #region Add to Vector3 that gets passed into Fixed Update
+        Vector3 tempVel = new Vector3();
+
+        if (playerInput.KM_Forward)
+            tempVel.z = 1.0f;
+        else if (playerInput.KM_Backward)
+            tempVel.z = -1.0f;
+
+        if (playerInput.KM_Strafe_Left)
+            tempVel.x = -1.0f;
+        else if (playerInput.KM_Strafe_Right)
+            tempVel.x = 1.0f;
+
+        // Normalize movement Vector
+        tempVel.Normalize();
+
+        // Adjust movement vector in-line with player rotation
+        v3_ClientSideUpdateVelocity += (this_RigidBody.transform.rotation * tempVel) * Time.deltaTime;
+        #endregion
+
+        // Determine if gun is switching positions
+        bool weaponMoving = ADSCheck();
+    }
+
+    // Intending on treating 'Fixed Update' as 'Physics Updates' and 'Server Side'-style updates (Tick-rate?)
+    private void FixedUpdate()
+    {
 
         // Determine if on ground
         RaycastHit rayHit = GroundRaycastCheck();
 
+        // Get potential Jump request
+        // Test if player is crouching
+        bool isCrouching = CrouchCheck();
+
         // Test if the player tries to jump
-        if(!isCrouching)
+        if (!isCrouching)
         {
             PlayerPressedJump = TryJump(rayHit);
         }
 
         // Apply input-based velocity
-        ApplyControllerBasedVelocity(isCrouching, rayHit);
-        
+        // ApplyControllerBasedVelocity(isCrouching, rayHit);
+        //v3_ClientSideUpdateVelocity
+        // Mouse Input first
+        MouseMoveUpdate();
+
+        // Store current gravity velocity
+        float currVertVelocity = this_RigidBody.velocity.y;
+
+        // Assign new velocity to player
+        this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
+
+        v3_ClientSideUpdateVelocity = new Vector3();
+
+        /*
         // If on the ground, store the point velocity (at the rayhit point) of the ground object
         if (rayHit.collider != null)
         {
@@ -216,12 +262,11 @@ public class scr_PlayerController : scr_PlayerInput
         {
             this_RigidBody.MovePosition(this_RigidBody.position + groundPointVelocity * Time.fixedDeltaTime);
         }
-
-        // Determine if gun is switching positions
-        bool weaponMoving = ADSCheck();
+        */
+        
 
         // If gun isn't switching positions, determine if player is firing the gun
-        if( !weaponMoving ) FireGunCheck();
+        // if( !weaponMoving ) FireGunCheck();
     }
 
     void ApplyControllerBasedVelocity(bool _isCrouching, RaycastHit rayHit_)
