@@ -201,6 +201,7 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Adjust movement vector in-line with player rotation
         v3_ClientSideUpdateVelocity += (this_RigidBody.transform.rotation * tempVel) * Time.deltaTime;
+        print(v3_ClientSideUpdateVelocity);
         #endregion
 
         // Determine if gun is switching positions
@@ -237,6 +238,7 @@ public class scr_PlayerController : scr_PlayerInput
         this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
 
         v3_ClientSideUpdateVelocity = new Vector3();
+        print("------\nFIXED UPDATE RESET\n------");
 
         /*
         // If on the ground, store the point velocity (at the rayhit point) of the ground object
