@@ -58,7 +58,7 @@ public class scr_PlayerController : scr_PlayerInput
     #endregion
 
     #region Movement Standards
-    [SerializeField] static float MAX_MOVE_SPEED = 5.0f;
+    [SerializeField] static float MAX_MOVE_SPEED = 250.0f;
     CapsuleCollider this_Collider;
     [SerializeField] PhysicMaterial[] physMatList;
     
@@ -183,6 +183,9 @@ public class scr_PlayerController : scr_PlayerInput
         // Get player input values
         base.UpdatePlayerInput();
 
+        // Mouse Input first
+        MouseMoveUpdate();
+
         #region Add to Vector3 that gets passed into Fixed Update
         Vector3 tempVel = new Vector3();
 
@@ -211,7 +214,6 @@ public class scr_PlayerController : scr_PlayerInput
     // Intending on treating 'Fixed Update' as 'Physics Updates' and 'Server Side'-style updates (Tick-rate?)
     private void FixedUpdate()
     {
-
         // Determine if on ground
         RaycastHit rayHit = GroundRaycastCheck();
 
@@ -225,15 +227,15 @@ public class scr_PlayerController : scr_PlayerInput
             PlayerPressedJump = TryJump(rayHit);
         }
 
-        // Apply input-based velocity
-        // ApplyControllerBasedVelocity(isCrouching, rayHit);
-        //v3_ClientSideUpdateVelocity
-        // Mouse Input first
-        MouseMoveUpdate();
-
         // Store current gravity velocity
         float currVertVelocity = this_RigidBody.velocity.y;
 
+        // Apply input-based velocity
+        // ApplyControllerBasedVelocity(isCrouching, rayHit);
+        v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
+
+        v3_ClientSideUpdateVelocity.y = currVertVelocity;
+        
         // Assign new velocity to player
         this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
 
