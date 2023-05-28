@@ -238,7 +238,8 @@ public class scr_PlayerController : scr_PlayerInput
         v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
 
         v3_ClientSideUpdateVelocity.y = currVertVelocity;
-        
+        if (PlayerPressedJump) v3_ClientSideUpdateVelocity.y = JUMP_VELOCITY;
+
         // Assign new velocity to player
         this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
 
