@@ -58,7 +58,7 @@ public class scr_PlayerController : scr_PlayerInput
     #endregion
 
     #region Movement Standards
-    [SerializeField] static float MAX_MOVE_SPEED = 250.0f;
+    [SerializeField] static float MAX_MOVE_SPEED = 350.0f;
     CapsuleCollider this_Collider;
     [SerializeField] PhysicMaterial[] physMatList;
     
@@ -90,6 +90,8 @@ public class scr_PlayerController : scr_PlayerInput
 
     #region Gun Object
     scr_GunFire GunWeapon;
+    [SerializeField] float MAX_WEAPON_FIRE_RATE = 0.25f;
+    float f_WeaponFireRateTimer = 0f;
     #endregion
 
     // Mouse Camera Rotation Information
@@ -204,11 +206,12 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Adjust movement vector in-line with player rotation
         v3_ClientSideUpdateVelocity += (this_RigidBody.transform.rotation * tempVel) * Time.deltaTime;
-        print(v3_ClientSideUpdateVelocity);
         #endregion
 
         // Determine if gun is switching positions
         bool weaponMoving = ADSCheck();
+
+        if (!weaponMoving) FireGunCheck();
     }
 
     // Intending on treating 'Fixed Update' as 'Physics Updates' and 'Server Side'-style updates (Tick-rate?)
@@ -240,7 +243,6 @@ public class scr_PlayerController : scr_PlayerInput
         this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
 
         v3_ClientSideUpdateVelocity = new Vector3();
-        print("------\nFIXED UPDATE RESET\n------");
 
         /*
         // If on the ground, store the point velocity (at the rayhit point) of the ground object
@@ -270,7 +272,7 @@ public class scr_PlayerController : scr_PlayerInput
         
 
         // If gun isn't switching positions, determine if player is firing the gun
-        // if( !weaponMoving ) FireGunCheck();
+        // 
     }
 
     void ApplyControllerBasedVelocity(bool _isCrouching, RaycastHit rayHit_)
@@ -489,7 +491,7 @@ public class scr_PlayerController : scr_PlayerInput
                 {
                     GunMoving = true;
 
-                    f_WeaponLerpTime += Time.fixedDeltaTime;
+                    f_WeaponLerpTime += Time.deltaTime;
 
                     if (f_WeaponLerpTime > WEAPON_LERP_PERC_MAX) 
                         f_WeaponLerpTime = WEAPON_LERP_PERC_MAX;
@@ -501,7 +503,7 @@ public class scr_PlayerController : scr_PlayerInput
                 {
                     GunMoving = true;
 
-                    f_WeaponLerpTime -= Time.fixedDeltaTime;
+                    f_WeaponLerpTime -= Time.deltaTime;
 
                     if (f_WeaponLerpTime < 0f) f_WeaponLerpTime = 0f;
                 }
@@ -546,12 +548,24 @@ public class scr_PlayerController : scr_PlayerInput
     bool mouseLeft_Old;
     void FireGunCheck()
     {
+        f_WeaponFireRateTimer -= Time.deltaTime;
+        if (f_WeaponFireRateTimer < 0f) f_WeaponFireRateTimer = 0f;
+
         // If the player fired this frame, but not a previous frame
         if(playerInput.KM_Mouse_Left && (playerInput.KM_Mouse_Left != mouseLeft_Old))
         {
-            if (GunWeapon)
+            // As long as enough time between shots has passed, continue
+            if (f_WeaponFireRateTimer == 0f)
             {
-                GunWeapon.FireGun(WeaponState);
+                // Ensure weapon object exists
+                if (GunWeapon)
+                {
+                    // Fire weapon
+                    GunWeapon.FireGun(WeaponState);
+
+                    // Reset weapon fire rate
+                    f_WeaponFireRateTimer = MAX_WEAPON_FIRE_RATE;
+                }
             }
         }
 
