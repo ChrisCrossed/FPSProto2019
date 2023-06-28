@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Slope
   - MovingPlatform
+  - PathNode
   layers:
   - Default
   - TransparentFX
