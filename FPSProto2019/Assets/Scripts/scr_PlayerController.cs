@@ -235,10 +235,26 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Apply input-based velocity
         // ApplyControllerBasedVelocity(isCrouching, rayHit);
-        v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
 
-        v3_ClientSideUpdateVelocity.y = currVertVelocity;
+
+        RaycastHit _hit;
+        if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 0.25f))
+        {
+            print(_hit.distance);
+            v3_ClientSideUpdateVelocity = Vector3.ProjectOnPlane(v3_ClientSideUpdateVelocity, -_hit.normal);
+        }
+
+        
+
+        /*
         if (PlayerPressedJump) v3_ClientSideUpdateVelocity.y = JUMP_VELOCITY;
+        else
+        {
+            v3_ClientSideUpdateVelocity.y = currVertVelocity;
+        }
+        */
+
+        v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
 
         // Assign new velocity to player
         this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
@@ -422,6 +438,9 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Normalize movement Vector
         tempVel.Normalize();
+
+        // TEST - Determine slope here
+        print(rayHit_.distance);
 
         // Adjust movement vector in-line with player rotation
         Vector3 v3_PlayerVelocity = this_RigidBody.transform.rotation * tempVel;
