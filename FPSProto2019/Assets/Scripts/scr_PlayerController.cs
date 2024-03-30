@@ -214,6 +214,7 @@ public class scr_PlayerController : scr_PlayerInput
         if (!weaponMoving) FireGunCheck();
     }
 
+    bool PlayerCanJump;
     // Intending on treating 'Fixed Update' as 'Physics Updates' and 'Server Side'-style updates (Tick-rate?)
     private void FixedUpdate()
     {
@@ -227,8 +228,10 @@ public class scr_PlayerController : scr_PlayerInput
         // Test if the player tries to jump
         if (!isCrouching)
         {
-            PlayerPressedJump = TryJump(rayHit);
+            PlayerCanJump = TryJump(rayHit);
         }
+
+        print(GroundTouchTimer);
 
         // Store current gravity velocity
         float currVertVelocity = this_RigidBody.velocity.y;
@@ -240,7 +243,7 @@ public class scr_PlayerController : scr_PlayerInput
         RaycastHit _hit;
         if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 0.25f))
         {
-            print(_hit.distance);
+            // print(_hit.distance);
             v3_ClientSideUpdateVelocity = Vector3.ProjectOnPlane(v3_ClientSideUpdateVelocity, -_hit.normal);
         }
 
@@ -340,15 +343,34 @@ public class scr_PlayerController : scr_PlayerInput
         this_Camera_Object.transform.eulerAngles = cameraEuler;
     }
 
-    bool PlayerPressedJump;
-    static float GROUND_TOUCH_TIMER_MAX = 0.025f;
-    bool JumpButtonState;
+    static float GROUND_TOUCH_TIMER_MAX = 0.5f;
     bool TryJump( RaycastHit rayHit_ )
     {
-        bool playerPressedJump = false;
+        bool canJump = false;
 
-        if ( rayHit_.distance <= JumpRayCastDistance && GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX)
+        // Increment the timer. If it's not at max timer, player can't jump regardless.
+        if (GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
         {
+            GroundTouchTimer += Time.fixedDeltaTime;
+            if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
+
+            return canJump;
+        }
+
+        // Since the player is allowed to jump, if they indeed attempt a jump, check to see if they're on the ground.
+        if (playerInput.KM_Button_Jump)
+        {
+            if ( rayHit_.distance <= JumpRayCastDistance )
+            {
+                print("Jump surface: " + rayHit_.collider.gameObject.name);
+                GroundTouchTimer = -0.05f;
+            }
+        }
+
+        // GroundTouchTimer = -0.05f;
+        /*
+
+
             if (playerInput.KM_Button_Jump)
             {
                 if(!JumpButtonState)
@@ -367,8 +389,9 @@ public class scr_PlayerController : scr_PlayerInput
                 JumpButtonState = false;
             }
         }
+        */
 
-        return playerPressedJump;
+        return canJump;
     }
 
     static float PLAYER_CROUCH_HEIGHT = 0.5f;
@@ -480,7 +503,7 @@ public class scr_PlayerController : scr_PlayerInput
 
         // Replace gravity
         v3_NewVelocity.y = f_CurrVertVelocity_;
-        if(PlayerPressedJump)
+        if(PlayerCanJump)
         {
             v3_NewVelocity.y = JUMP_VELOCITY;
         }
@@ -663,18 +686,11 @@ public class scr_PlayerController : scr_PlayerInput
             // One found the ground (presumably [0]), so re-assign normal gravity
             AssignGravity(true);
 
-            // Begin increasing ground touch timer
-            if (GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
-            {
-                GroundTouchTimer += Time.fixedDeltaTime;
-                if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
-            }
+            
         }
         // If the RaycastHit doesn't detect an object, reset the timer
         else
         {
-            GroundTouchTimer = 0f;
-
             AssignGravity(false);
         }
 
