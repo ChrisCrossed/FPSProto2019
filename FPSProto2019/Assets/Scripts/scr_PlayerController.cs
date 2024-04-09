@@ -230,10 +230,12 @@ public class scr_PlayerController : scr_PlayerInput
     private void FixedUpdate()
     {
         // Determine if on ground
-        RaycastHit rayHit;
-        GroundState = GroundRaycastState( out rayHit );
-
-        print(GroundState);
+        RaycastHit _hit;
+        if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 5f))
+        {
+            // print(_hit.distance);
+            v3_ClientSideUpdateVelocity = Vector3.ProjectOnPlane(v3_ClientSideUpdateVelocity, -_hit.normal);
+        }
 
         // Get potential Jump request
         // Test if player is crouching
@@ -242,48 +244,38 @@ public class scr_PlayerController : scr_PlayerInput
         // Store current gravity velocity
         float currVertVelocity = this_RigidBody.velocity.y;
 
-        // Apply input-based velocity
-        // ApplyControllerBasedVelocity(isCrouching, rayHit);
-
-
-        RaycastHit _hit;
-        if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 0.25f))
-        {
-            // print(_hit.distance);
-            v3_ClientSideUpdateVelocity = Vector3.ProjectOnPlane(v3_ClientSideUpdateVelocity, -_hit.normal);
-        }
-
-        
-
-        /*
-        if (PlayerPressedJump) v3_ClientSideUpdateVelocity.y = JUMP_VELOCITY;
-        else
-        {
-            v3_ClientSideUpdateVelocity.y = currVertVelocity;
-        }
-        */
 
         v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
 
-        // Test if the player tries to jump
-        if (JumpTimerCheck(rayHit))
+        // GroundSnap Timer after user jumps.
+        bool snappedToGround = SnapToGround(_hit);
+        print(snappedToGround);
+        if (snappedToGround)
         {
-            if (!isCrouching && playerInput.KM_Button_Jump)
+            if (playerInput.KM_Button_Jump)
             {
-                // PlayerCanJump = TryJump(rayHit);
                 currVertVelocity = ApplyJumpVelocity();
-            }
-            /*
-            else if(rayHit.distance > JumpRayCastDistance)
-            {
-                currVertVelocity = this_RigidBody.velocity.y;
             }
             else
             {
-                currVertVelocity = 0f;
+                if (_hit.distance < JumpRayCastDistance + gameObject.transform.localScale.y)
+                {
+                    if (_hit.distance > gameObject.transform.localScale.y)
+                    {
+                        Vector3 newPos = gameObject.transform.position;
+                        newPos.y -= Time.deltaTime;
+
+                        if (newPos.y < _hit.point.y + gameObject.transform.localScale.y)
+                            newPos.y = _hit.point.y + gameObject.transform.localScale.y;
+
+                        gameObject.transform.position = newPos;
+                    }
+                }
             }
-            */
         }
+
+        
+       
 
         v3_ClientSideUpdateVelocity.y = currVertVelocity;
 
@@ -291,36 +283,6 @@ public class scr_PlayerController : scr_PlayerInput
         this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
 
         v3_ClientSideUpdateVelocity = new Vector3();
-
-        /*
-        // If on the ground, store the point velocity (at the rayhit point) of the ground object
-        if (rayHit.collider != null)
-        {
-            if (groundRigidbody != null)
-                this_RigidBody.MovePosition(this_RigidBody.position + groundPointVelocity * Time.fixedDeltaTime);
-
-            groundPointVelocity = Vector3.zero;
-
-            if (rayHit.rigidbody != null)
-            {
-                groundRigidbody = rayHit.rigidbody;
-                groundPointVelocity = rayHit.rigidbody.GetPointVelocity(rayHit.point);
-                groundPointVelocity.y = 0; //Don't worry about up/down (that's handled naturally)
-            }
-        }
-        else if (groundRigidbody != null) // If didn't hit rigidbody and we DID last frame (groundRigidbody is still defined), we just left the ground
-        {
-            groundRigidbody = null;
-        }
-        else // Didn't hit rigidbody this frame or last frame (still not be on ground)
-        {
-            this_RigidBody.MovePosition(this_RigidBody.position + groundPointVelocity * Time.fixedDeltaTime);
-        }
-        */
-        
-
-        // If gun isn't switching positions, determine if player is firing the gun
-        // 
     }
 
 
@@ -352,31 +314,32 @@ public class scr_PlayerController : scr_PlayerInput
 
     float ApplyJumpVelocity()
     {
-        JumpResetTimer = JUMP_TIMER_MAX;
+        JumpResetTimer = 0f;
 
         return JUMP_VELOCITY;
     }
 
     float JumpResetTimer = 0f;
     const float JUMP_TIMER_MAX = 0.5f;
-    bool JumpTimerCheck(RaycastHit _rayHit)
+    bool SnapToGround(RaycastHit _rayHit)
     {
         bool canJump = false;
 
         // If not enough time has passed, don't allow a jump
-        if(JumpResetTimer > 0f)
+        if(JumpResetTimer < JUMP_TIMER_MAX)
         {
             canJump = false;
 
-            JumpResetTimer -= Time.fixedDeltaTime;
-            if(JumpResetTimer < 0f)
+            JumpResetTimer += Time.fixedDeltaTime;
+            if(JumpResetTimer > JUMP_TIMER_MAX)
             {
-                JumpResetTimer = 0f;
+                JumpResetTimer = JUMP_TIMER_MAX;
             }
         }
 
         // Meant to continue on as the function runs each frame
-        if(_rayHit.distance < JumpRayCastDistance && JumpResetTimer == 0f)
+        float playerTotalRayDistance = gameObject.transform.localScale.y + JumpRayCastDistance;
+        if(_rayHit.distance < playerTotalRayDistance && JumpResetTimer == JUMP_TIMER_MAX)
         {
             canJump = true;
         }
@@ -543,109 +506,7 @@ public class scr_PlayerController : scr_PlayerInput
     }
 
     public float JumpRayCastDistance = 0.17f;
-    float GroundTouchTimer = 0f;
-    float SlopeAngle;
-    bool OnMovingPlatform = false;
-    GroundTouchState GroundRaycastState(out RaycastHit hitInfo)
-    {
-        RaycastHit hit = new RaycastHit();
-        GroundState = new GroundTouchState();
-
-        RaycastHit hitTemp = new RaycastHit();
-
-        // Temporary variables
-        float currDist = float.PositiveInfinity;
-
-        // Run through all Raycast objects to see if one finds the ground
-        for (int i = 0; i < rayObj_Jump.Length; ++i)
-        {
-            if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hitTemp, currDist))
-            {
-                #region Determine which Hit GameObject is closest to the ground
-                if(hitTemp.distance < currDist)
-                {
-                    currDist = hitTemp.distance;
-                    hit = hitTemp;
-                }
-                #endregion
-            }
-        }
-
-        #region Determine what the player is doing (standing, jumping, crouching) based on distance to the ground
-        if(currDist < JumpRayCastDistance)
-        {
-            GroundState = GroundTouchState.OnGround;
-        }
-        else
-        {
-            GroundState = GroundTouchState.Airborne;
-        }
-        #endregion
-
-        /*
-        RaycastHit hitTemp = new RaycastHit();
-        float f_ShortestDistance = 5f;
-        SlopeAngle = 0f;
-
-        // Vector3's for slope checks
-        Vector3 centerVectorHitPos = new Vector3();
-        Vector3 highestVectorHitPos = new Vector3();
-
-        int tempInfo = 10;
-
-        // Run through all Raycast objects to see if one finds the ground
-        for (int i = 0; i < rayObj_Jump.Length; ++i)
-        {
-            if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hitTemp, JumpRayCastDistance))
-            {
-                // Temporarily store the center ground hit position
-                if( i == 0 )
-                    centerVectorHitPos = hitTemp.point;
-
-                if(hitTemp.distance < f_ShortestDistance)
-                {
-                    tempInfo = i;
-
-                    f_ShortestDistance = hitTemp.distance;
-                    hit = hitTemp;
-
-                    // Also store information if a closer position is found than the center point for slope checking
-                    if( i > 0 ) // Only runs on non-center raycast points since 0 == center point
-                    {
-                        highestVectorHitPos = hitTemp.point;
-                    }
-                }
-            }
-        }
-
-        // If highestVectorHitPos is filled, we're on an angle
-        if( highestVectorHitPos != Vector3.zero )
-        {
-            float heightDiff = Mathf.Abs(highestVectorHitPos.y - centerVectorHitPos.y);
-            if (heightDiff != 0f) SlopeAngle = 5f;
-        }
-
-        if(hit.collider != null)
-        {
-            // If player is standing on a moving platform, store it
-            if (hit.collider.tag == "MovingPlatform") OnMovingPlatform = true; else OnMovingPlatform = false;
-
-            // One found the ground (presumably [0]), so re-assign normal gravity
-            AssignGravity(true);
-
-            
-        }
-        // If the RaycastHit doesn't detect an object, reset the timer
-        else
-        {
-            AssignGravity(false);
-        }
-        */
-
-        hitInfo = hit;
-
-        return GroundState;
-    }
+    
 
     RaycastHit CrouchRaycastCheck( float playerHeight_ )
     {
