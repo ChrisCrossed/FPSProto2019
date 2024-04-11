@@ -304,50 +304,53 @@ public class scr_PlayerController : scr_PlayerInput
     // Intending on treating 'Fixed Update' as 'Physics Updates' and 'Server Side'-style updates (Tick-rate?)
     private void FixedUpdate()
     {
-        // Determine if on ground
-        RaycastHit _hit;
-        if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 5f))
-        {
-            // print(_hit.distance);
-            v3_ClientSideUpdateVelocity = Vector3.ProjectOnPlane(v3_ClientSideUpdateVelocity, -_hit.normal);
-        }
-
-        // Get potential Jump request
-        // Test if player is crouching
-        bool isCrouching = CrouchCheck();
-
         // Store current gravity velocity
         float currVertVelocity = this_RigidBody.velocity.y;
 
-
-        v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
-
-        // GroundSnap Timer after user jumps.
-        bool snappedToGround = SnapToGround(_hit);
-
-        if (snappedToGround)
+        if (!AbilityInputOverride)
         {
-            if (playerInput.KM_Button_Jump)
+            // Determine if on ground
+            RaycastHit _hit;
+            if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 5f))
             {
-                currVertVelocity = ApplyJumpVelocity();
+                // print(_hit.distance);
+                v3_ClientSideUpdateVelocity = Vector3.ProjectOnPlane(v3_ClientSideUpdateVelocity, -_hit.normal);
             }
-            else
+
+            // Get potential Jump request
+            // Test if player is crouching
+            bool isCrouching = CrouchCheck();
+
+            v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
+
+            // GroundSnap Timer after user jumps.
+            bool snappedToGround = SnapToGround(_hit);
+
+            if (snappedToGround)
             {
-                if (_hit.distance < JumpRayCastDistance + gameObject.transform.localScale.y)
+                if (playerInput.KM_Button_Jump)
                 {
-                    if (_hit.distance > gameObject.transform.localScale.y)
+                    currVertVelocity = ApplyJumpVelocity();
+                }
+                else
+                {
+                    if (_hit.distance < JumpRayCastDistance + gameObject.transform.localScale.y)
                     {
-                        Vector3 newPos = gameObject.transform.position;
-                        newPos.y -= Time.deltaTime;
+                        if (_hit.distance > gameObject.transform.localScale.y)
+                        {
+                            Vector3 newPos = gameObject.transform.position;
+                            newPos.y -= Time.deltaTime;
 
-                        if (newPos.y < _hit.point.y + gameObject.transform.localScale.y)
-                            newPos.y = _hit.point.y + gameObject.transform.localScale.y;
+                            if (newPos.y < _hit.point.y + gameObject.transform.localScale.y)
+                                newPos.y = _hit.point.y + gameObject.transform.localScale.y;
 
-                        gameObject.transform.position = newPos;
+                            gameObject.transform.position = newPos;
+                        }
                     }
                 }
             }
         }
+        
 
         v3_ClientSideUpdateVelocity.y = currVertVelocity;
 
@@ -416,6 +419,11 @@ public class scr_PlayerController : scr_PlayerInput
         {
             DashSelectionLogic();
         }
+
+        if(AbilityInputOverride)
+        {
+
+        }
     }
 
     // 'Left' (Q) Ability
@@ -438,7 +446,20 @@ public class scr_PlayerController : scr_PlayerInput
         {
             GameObject smokeObject = _hit.collider.gameObject.transform.parent.gameObject;
             smokeObject.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Selected);
+
+            if(playerInput.KM_Mouse_Left)
+            {
+                PlayerLookingForDashChoice = false;
+
+                AbilityInputOverride = true;
+            }
         }
+    }
+
+    bool AbilityInputOverride;
+    void DashTowardObject()
+    {
+
     }
 
 
