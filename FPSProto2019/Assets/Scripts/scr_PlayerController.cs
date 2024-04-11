@@ -6,6 +6,7 @@ public enum WeaponState
 {
     Normal,
     ADS,
+    Ability,
     Moving
 }
 
@@ -38,6 +39,13 @@ public struct PlayerSettings
 
 public class scr_PlayerController : scr_PlayerInput
 {
+    enum GroundTouchState
+    { 
+        OnGround,
+        Crouch,
+        Airborne
+    }
+
     // Pre-Defined
     XInputDotNetPure.ButtonState Pressed = XInputDotNetPure.ButtonState.Pressed;
     XInputDotNetPure.ButtonState Released = XInputDotNetPure.ButtonState.Released;
@@ -64,6 +72,9 @@ public class scr_PlayerController : scr_PlayerInput
     
     private Vector3 groundPointVelocity;
     private Rigidbody groundRigidbody;
+
+    GroundTouchState GroundState;
+    static float JUMP_VELOCITY = 4f;
     #endregion
 
     #region Weapon Position Lerp
@@ -113,6 +124,7 @@ public class scr_PlayerController : scr_PlayerInput
         #endregion
         #region Movement Standards
         this_Collider = this_Player.GetComponent<CapsuleCollider>();
+        GroundState = new GroundTouchState();
         #endregion
         #region Weapon Objects
         go_HUD_WeaponModel = this_Camera_Object.transform.Find("WeaponMdl").gameObject;
@@ -185,6 +197,18 @@ public class scr_PlayerController : scr_PlayerInput
         // Get player input values
         base.UpdatePlayerInput();
 
+        // Check if an ability was selected
+        if(playerInput.KM_Ability_1 || playerInput.KM_Ability_2 || playerInput.KM_Ability_3 || playerInput.KM_Ability_Ult)
+        {
+            AbilityManager();
+        }
+        else if(playerInput.KM_Button_Weapon_Primary || playerInput.KM_Button_Weapon_Secondary || playerInput.KM_Button_Weapon_Melee)
+        {
+            WeaponManager();
+        }
+
+        print(WeaponState);
+
         // Mouse Input first
         MouseMoveUpdate();
 
@@ -208,10 +232,15 @@ public class scr_PlayerController : scr_PlayerInput
         v3_ClientSideUpdateVelocity += (this_RigidBody.transform.rotation * tempVel) * Time.deltaTime;
         #endregion
 
-        // Determine if gun is switching positions
-        bool weaponMoving = ADSCheck();
+        // State Ability/Weapon Selection
+        if(WeaponState != WeaponState.Ability)
+        {
+            // Determine if gun is switching positions
+            bool weaponMoving = ADSCheck();
 
-        if (!weaponMoving) FireGunCheck();
+            if (!weaponMoving) FireGunCheck();
+        }
+        
     }
 
     bool PlayerCanJump;
@@ -219,103 +248,101 @@ public class scr_PlayerController : scr_PlayerInput
     private void FixedUpdate()
     {
         // Determine if on ground
-        RaycastHit rayHit = GroundRaycastCheck();
-
-        // Get potential Jump request
-        // Test if player is crouching
-        bool isCrouching = CrouchCheck();
-
-        // Test if the player tries to jump
-        if (!isCrouching)
-        {
-            PlayerCanJump = TryJump(rayHit);
-        }
-
-        print(GroundTouchTimer);
-
-        // Store current gravity velocity
-        float currVertVelocity = this_RigidBody.velocity.y;
-
-        // Apply input-based velocity
-        // ApplyControllerBasedVelocity(isCrouching, rayHit);
-
-
         RaycastHit _hit;
-        if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 0.25f))
+        if (Physics.Raycast(gameObject.transform.position, Vector3.down, out _hit, PLAYER_STAND_HEIGHT + 5f))
         {
             // print(_hit.distance);
             v3_ClientSideUpdateVelocity = Vector3.ProjectOnPlane(v3_ClientSideUpdateVelocity, -_hit.normal);
         }
 
-        
+        // Get potential Jump request
+        // Test if player is crouching
+        bool isCrouching = CrouchCheck();
 
-        /*
-        if (PlayerPressedJump) v3_ClientSideUpdateVelocity.y = JUMP_VELOCITY;
-        else
-        {
-            v3_ClientSideUpdateVelocity.y = currVertVelocity;
-        }
-        */
+        // Store current gravity velocity
+        float currVertVelocity = this_RigidBody.velocity.y;
+
 
         v3_ClientSideUpdateVelocity *= MAX_MOVE_SPEED;
+
+        // GroundSnap Timer after user jumps.
+        bool snappedToGround = SnapToGround(_hit);
+
+        if (snappedToGround)
+        {
+            if (playerInput.KM_Button_Jump)
+            {
+                currVertVelocity = ApplyJumpVelocity();
+            }
+            else
+            {
+                if (_hit.distance < JumpRayCastDistance + gameObject.transform.localScale.y)
+                {
+                    if (_hit.distance > gameObject.transform.localScale.y)
+                    {
+                        Vector3 newPos = gameObject.transform.position;
+                        newPos.y -= Time.deltaTime;
+
+                        if (newPos.y < _hit.point.y + gameObject.transform.localScale.y)
+                            newPos.y = _hit.point.y + gameObject.transform.localScale.y;
+
+                        gameObject.transform.position = newPos;
+                    }
+                }
+            }
+        }
+
+        v3_ClientSideUpdateVelocity.y = currVertVelocity;
 
         // Assign new velocity to player
         this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
 
         v3_ClientSideUpdateVelocity = new Vector3();
-
-        /*
-        // If on the ground, store the point velocity (at the rayhit point) of the ground object
-        if (rayHit.collider != null)
-        {
-            if (groundRigidbody != null)
-                this_RigidBody.MovePosition(this_RigidBody.position + groundPointVelocity * Time.fixedDeltaTime);
-
-            groundPointVelocity = Vector3.zero;
-
-            if (rayHit.rigidbody != null)
-            {
-                groundRigidbody = rayHit.rigidbody;
-                groundPointVelocity = rayHit.rigidbody.GetPointVelocity(rayHit.point);
-                groundPointVelocity.y = 0; //Don't worry about up/down (that's handled naturally)
-            }
-        }
-        else if (groundRigidbody != null) // If didn't hit rigidbody and we DID last frame (groundRigidbody is still defined), we just left the ground
-        {
-            groundRigidbody = null;
-        }
-        else // Didn't hit rigidbody this frame or last frame (still not be on ground)
-        {
-            this_RigidBody.MovePosition(this_RigidBody.position + groundPointVelocity * Time.fixedDeltaTime);
-        }
-        */
-        
-
-        // If gun isn't switching positions, determine if player is firing the gun
-        // 
     }
 
-    void ApplyControllerBasedVelocity(bool _isCrouching, RaycastHit rayHit_)
+    // ************************************************************
+    #region Abilities
+    void AbilityManager()
     {
-        // Store current gravity velocity
-        float currVertVelocity = this_RigidBody.velocity.y;
+        WeaponState = WeaponState.Ability;
 
-        if (playerInput.InputType == ControllerType.Controller)
-        {
-            if (playerInput.DPad_Pressed_Left == Pressed && playerInput_OLD.DPad_Pressed_Right == Released)
-            {
-                print("Pressed");
-            }
-        }
-        else // Keyboard/Mouse Input
-        {
-            // Mouse Input first
-            MouseMoveUpdate();
-
-            // Move player based on WASD input
-            CalculateMovementVelocity(currVertVelocity, _isCrouching, rayHit_);
-        }
+        if (playerInput.KM_Ability_1)
+            ActivateAbility_AreaSelectionDash();
     }
+
+    // 'Left' (Q) Ability
+    // --- Smoke/Wall Dash
+    void ActivateAbility_AreaSelectionDash()
+    {
+        
+    }
+
+
+    // 'Right' (E) Ability
+    // --- 3 Wall Placement
+    void ActivateAbility_WallPlacement()
+    {
+
+    }
+
+
+    // 'Free' (C) Ability
+    //  --- Marker Snapback
+    void ActivateAbility_MarkerSnapback()
+    {
+
+    }
+
+    // Ultimate (X) Ability
+    // --- Area Boardwipe
+    void ActivateAbility_AreaCleanse()
+    {
+
+    }
+
+    #endregion
+    // ************************************************************
+
 
     void MouseMoveUpdate()
     {
@@ -343,53 +370,37 @@ public class scr_PlayerController : scr_PlayerInput
         this_Camera_Object.transform.eulerAngles = cameraEuler;
     }
 
-    static float GROUND_TOUCH_TIMER_MAX = 0.5f;
-    bool TryJump( RaycastHit rayHit_ )
+    float ApplyJumpVelocity()
+    {
+        JumpResetTimer = 0f;
+
+        return JUMP_VELOCITY;
+    }
+
+    float JumpResetTimer = 0f;
+    const float JUMP_TIMER_MAX = 0.5f;
+    bool SnapToGround(RaycastHit _rayHit)
     {
         bool canJump = false;
 
-        // Increment the timer. If it's not at max timer, player can't jump regardless.
-        if (GroundTouchTimer < GROUND_TOUCH_TIMER_MAX)
+        // If not enough time has passed, don't allow a jump
+        if(JumpResetTimer < JUMP_TIMER_MAX)
         {
-            GroundTouchTimer += Time.fixedDeltaTime;
-            if (GroundTouchTimer >= GROUND_TOUCH_TIMER_MAX) GroundTouchTimer = GROUND_TOUCH_TIMER_MAX;
+            canJump = false;
 
-            return canJump;
+            JumpResetTimer += Time.fixedDeltaTime;
+            if(JumpResetTimer > JUMP_TIMER_MAX)
+            {
+                JumpResetTimer = JUMP_TIMER_MAX;
+            }
         }
 
-        // Since the player is allowed to jump, if they indeed attempt a jump, check to see if they're on the ground.
-        if (playerInput.KM_Button_Jump)
+        // Meant to continue on as the function runs each frame
+        float playerTotalRayDistance = gameObject.transform.localScale.y + JumpRayCastDistance;
+        if(_rayHit.distance < playerTotalRayDistance && JumpResetTimer == JUMP_TIMER_MAX)
         {
-            if ( rayHit_.distance <= JumpRayCastDistance )
-            {
-                print("Jump surface: " + rayHit_.collider.gameObject.name);
-                GroundTouchTimer = -0.05f;
-            }
+            canJump = true;
         }
-
-        // GroundTouchTimer = -0.05f;
-        /*
-
-
-            if (playerInput.KM_Button_Jump)
-            {
-                if(!JumpButtonState)
-                {
-                    // State that player pressed to jump
-                    playerPressedJump = true;
-                    JumpButtonState = true;
-
-                    // Setting to 'extreme' negative value to ensure player can't immediately 2x jump
-                    GroundTouchTimer = -0.05f;
-                }
-            }
-            else
-            {
-                // Old jump state for input comparison
-                JumpButtonState = false;
-            }
-        }
-        */
 
         return canJump;
     }
@@ -438,83 +449,10 @@ public class scr_PlayerController : scr_PlayerInput
         return isCrouching;
     }
 
-    static float JUMP_VELOCITY = 7f;
-    static float WALK_PENALTY_PERC = 0.5f;
-    static float CROUCH_PENALTY_PERC = 0.4f;
-    static float ADS_PENALTY_PERC = 0.8f;
-    void CalculateMovementVelocity( float f_CurrVertVelocity_, bool _isCrouching, RaycastHit rayHit_ )
+    void WeaponManager()
     {
-        // Create velocity information
-        Vector3 tempVel = new Vector3();
-
-        #region Create initial movement vector
-        if (playerInput.KM_Forward)
-            tempVel.z = 1.0f;
-        else if (playerInput.KM_Backward)
-            tempVel.z = -1.0f;
-
-        if (playerInput.KM_Strafe_Left)
-            tempVel.x = -1.0f;
-        else if (playerInput.KM_Strafe_Right)
-            tempVel.x = 1.0f;
-        #endregion
-
-        // Normalize movement Vector
-        tempVel.Normalize();
-
-        // TEST - Determine slope here
-        print(rayHit_.distance);
-
-        // Adjust movement vector in-line with player rotation
-        Vector3 v3_PlayerVelocity = this_RigidBody.transform.rotation * tempVel;
-
-        #region Lerp current velocity into desired velocity
-        // Player velocity last frame
-        Vector3 v3_OldVelocity = this_RigidBody.velocity;
-
-        // Find new velocity, set to a high percentage of the two combined
-        float f_LerpRate = 10f * Time.fixedDeltaTime;
-
-        // Determine potential max move speed based on stand/walk/crouch
-        float f_TempMaxSpeed = MAX_MOVE_SPEED;
-
-        // Can only alter ground velocity if the player is touching the ground
-        if (rayHit_.collider != null)
-        {
-            if (playerInput.KM_Button_Walk && !_isCrouching) f_TempMaxSpeed *= WALK_PENALTY_PERC;
-            if(_isCrouching) f_TempMaxSpeed *= CROUCH_PENALTY_PERC;
-        }
-
-        // If player is not holding the weapon at waist level, take a minor move speed penalty
-        if (WeaponState != WeaponState.Normal)
-            f_TempMaxSpeed *= ADS_PENALTY_PERC;
-
-        // Smoothly transition from old velocity into new velocity
-        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * f_TempMaxSpeed, f_LerpRate);
-
-        // If nearly max speed, just cap at max speed
-        if (v3_NewVelocity.magnitude / f_TempMaxSpeed > 0.96f)
-            v3_NewVelocity = v3_NewVelocity.normalized * f_TempMaxSpeed;
-        
-        // If nearly zero, just set at zero.
-        else if (v3_NewVelocity.magnitude <= 0.01f)
-            v3_NewVelocity = Vector3.zero;
-        #endregion
-
-        // Replace gravity
-        v3_NewVelocity.y = f_CurrVertVelocity_;
-        if(PlayerCanJump)
-        {
-            v3_NewVelocity.y = JUMP_VELOCITY;
-        }
-
-        // If player not giving input && slope of ground is greater than certain degree, change PhysMat
-        bool hasInput = (tempVel != Vector3.zero);
-        bool hasSlope = (SlopeAngle > 0f);
-        ChangePhysMatStats((!hasInput && hasSlope), OnMovingPlatform);
-
-        // Assign new velocity to player
-        this_RigidBody.velocity = v3_NewVelocity;
+        if (WeaponState == WeaponState.Ability)
+            WeaponState = WeaponState.Normal;
     }
 
     float f_LerpPerc_Old;
@@ -630,72 +568,7 @@ public class scr_PlayerController : scr_PlayerInput
     }
 
     public float JumpRayCastDistance = 0.17f;
-    float GroundTouchTimer = 0f;
-    float SlopeAngle;
-    bool OnMovingPlatform = false;
-    RaycastHit GroundRaycastCheck()
-    {
-        RaycastHit hit = new RaycastHit();
-        RaycastHit hitTemp = new RaycastHit();
-        float f_ShortestDistance = 5f;
-        SlopeAngle = 0f;
-
-        // Vector3's for slope checks
-        Vector3 centerVectorHitPos = new Vector3();
-        Vector3 highestVectorHitPos = new Vector3();
-
-        int tempInfo = 10;
-
-        // Run through all Raycast objects to see if one finds the ground
-        for (int i = 0; i < rayObj_Jump.Length; ++i)
-        {
-            if (Physics.Raycast(rayObj_Jump[i].transform.position, Vector3.down, out hitTemp, JumpRayCastDistance))
-            {
-                // Temporarily store the center ground hit position
-                if( i == 0 )
-                    centerVectorHitPos = hitTemp.point;
-
-                if(hitTemp.distance < f_ShortestDistance)
-                {
-                    tempInfo = i;
-
-                    f_ShortestDistance = hitTemp.distance;
-                    hit = hitTemp;
-
-                    // Also store information if a closer position is found than the center point for slope checking
-                    if( i > 0 ) // Only runs on non-center raycast points since 0 == center point
-                    {
-                        highestVectorHitPos = hitTemp.point;
-                    }
-                }
-            }
-        }
-
-        // If highestVectorHitPos is filled, we're on an angle
-        if( highestVectorHitPos != Vector3.zero )
-        {
-            float heightDiff = Mathf.Abs(highestVectorHitPos.y - centerVectorHitPos.y);
-            if (heightDiff != 0f) SlopeAngle = 5f;
-        }
-
-        if(hit.collider != null)
-        {
-            // If player is standing on a moving platform, store it
-            if (hit.collider.tag == "MovingPlatform") OnMovingPlatform = true; else OnMovingPlatform = false;
-
-            // One found the ground (presumably [0]), so re-assign normal gravity
-            AssignGravity(true);
-
-            
-        }
-        // If the RaycastHit doesn't detect an object, reset the timer
-        else
-        {
-            AssignGravity(false);
-        }
-
-        return hit;
-    }
+    
 
     RaycastHit CrouchRaycastCheck( float playerHeight_ )
     {
@@ -716,6 +589,112 @@ public class scr_PlayerController : scr_PlayerInput
         return hit;
     }
 
+
+    #region Unused
+
+    /*
+    void ApplyControllerBasedVelocity(bool _isCrouching, RaycastHit rayHit_)
+    {
+        // Store current gravity velocity
+        float currVertVelocity = this_RigidBody.velocity.y;
+
+        if (playerInput.InputType == ControllerType.Controller)
+        {
+            if (playerInput.DPad_Pressed_Left == Pressed && playerInput_OLD.DPad_Pressed_Right == Released)
+            {
+                print("Pressed");
+            }
+        }
+        else // Keyboard/Mouse Input
+        {
+            // Mouse Input first
+            MouseMoveUpdate();
+
+            // Move player based on WASD input
+            CalculateMovementVelocity(currVertVelocity, _isCrouching, rayHit_);
+        }
+    }
+
+    static float JUMP_VELOCITY = 7f;
+    static float WALK_PENALTY_PERC = 0.5f;
+    static float CROUCH_PENALTY_PERC = 0.4f;
+    static float ADS_PENALTY_PERC = 0.8f;
+    void CalculateMovementVelocity( float f_CurrVertVelocity_, bool _isCrouching, RaycastHit rayHit_ )
+    {
+        // Create velocity information
+        Vector3 tempVel = new Vector3();
+
+        #region Create initial movement vector
+        if (playerInput.KM_Forward)
+            tempVel.z = 1.0f;
+        else if (playerInput.KM_Backward)
+            tempVel.z = -1.0f;
+
+        if (playerInput.KM_Strafe_Left)
+            tempVel.x = -1.0f;
+        else if (playerInput.KM_Strafe_Right)
+            tempVel.x = 1.0f;
+        #endregion
+
+        // Normalize movement Vector
+        tempVel.Normalize();
+
+        // TEST - Determine slope here
+        print(rayHit_.distance);
+
+        // Adjust movement vector in-line with player rotation
+        Vector3 v3_PlayerVelocity = this_RigidBody.transform.rotation * tempVel;
+
+        #region Lerp current velocity into desired velocity
+        // Player velocity last frame
+        Vector3 v3_OldVelocity = this_RigidBody.velocity;
+
+        // Find new velocity, set to a high percentage of the two combined
+        float f_LerpRate = 10f * Time.fixedDeltaTime;
+
+        // Determine potential max move speed based on stand/walk/crouch
+        float f_TempMaxSpeed = MAX_MOVE_SPEED;
+
+        // Can only alter ground velocity if the player is touching the ground
+        if (rayHit_.collider != null)
+        {
+            if (playerInput.KM_Button_Walk && !_isCrouching) f_TempMaxSpeed *= WALK_PENALTY_PERC;
+            if(_isCrouching) f_TempMaxSpeed *= CROUCH_PENALTY_PERC;
+        }
+
+        // If player is not holding the weapon at waist level, take a minor move speed penalty
+        if (WeaponState != WeaponState.Normal)
+            f_TempMaxSpeed *= ADS_PENALTY_PERC;
+
+        // Smoothly transition from old velocity into new velocity
+        Vector3 v3_NewVelocity = Vector3.Lerp(v3_OldVelocity, v3_PlayerVelocity * f_TempMaxSpeed, f_LerpRate);
+
+        // If nearly max speed, just cap at max speed
+        if (v3_NewVelocity.magnitude / f_TempMaxSpeed > 0.96f)
+            v3_NewVelocity = v3_NewVelocity.normalized * f_TempMaxSpeed;
+        
+        // If nearly zero, just set at zero.
+        else if (v3_NewVelocity.magnitude <= 0.01f)
+            v3_NewVelocity = Vector3.zero;
+        #endregion
+
+        // Replace gravity
+        v3_NewVelocity.y = f_CurrVertVelocity_;
+        if(PlayerCanJump)
+        {
+            v3_NewVelocity.y = JUMP_VELOCITY;
+        }
+
+        // If player not giving input && slope of ground is greater than certain degree, change PhysMat
+        bool hasInput = (tempVel != Vector3.zero);
+        bool hasSlope = (SlopeAngle > 0f);
+        ChangePhysMatStats((!hasInput && hasSlope), OnMovingPlatform);
+
+        // Assign new velocity to player
+        this_RigidBody.velocity = v3_NewVelocity;
+    }
+
+    
     float frictionAmount = 0f;
     void ChangePhysMatStats( bool increaseFriction_, bool onMovingPlatform_ )
     {
@@ -747,4 +726,8 @@ public class scr_PlayerController : scr_PlayerInput
         this_Collider.material.dynamicFriction = frictionAmount;
         this_Collider.material.staticFriction = frictionAmount;
     }
+
+    */
+
+    #endregion
 }
