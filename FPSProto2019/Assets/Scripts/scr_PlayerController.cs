@@ -116,6 +116,8 @@ public class scr_PlayerController : scr_PlayerInput
     GameObject GO_SnapbackMarker_Timer_UI;
 
     GameObject GO_Dash_Selection_UI;
+
+    GameObject GO_NokWallParent;
     #endregion
 
     // Mouse Camera Rotation Information
@@ -163,6 +165,8 @@ public class scr_PlayerController : scr_PlayerInput
 
         GO_Dash_Selection_UI = GameObject.Find("UI_Ability_1_Selection");
         GO_Dash_Selection_UI.GetComponent<Image>().enabled = false;
+
+        GO_NokWallParent = GameObject.Find("NokWall").gameObject;
 
         Init_UI_AbilityObjects();
         #endregion
@@ -432,6 +436,11 @@ public class scr_PlayerController : scr_PlayerInput
         {
             DashTowardObject();
         }
+
+        if(GO_NokWallParent.activeSelf)
+        {
+            print("Active");
+        }
     }
 
     // 'Left' (Q) Ability
@@ -513,6 +522,8 @@ public class scr_PlayerController : scr_PlayerInput
         WeaponState = WeaponState.Ability;
 
         ADSCheck(true);
+
+        // GO_NokWallParent.SetActive(!GO_NokWallParent.activeSelf);
     }
 
 

@@ -3,16 +3,20 @@
   "WorkspaceRootPath": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|e:\\git_files\\fpsproto2019\\fpsproto2019\\assets\\nokwalllogic.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|solutionrelative:assets\\nokwalllogic.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|e:\\git_files\\fpsproto2019\\fpsproto2019\\assets\\scripts\\scr_playercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\scr_playercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\assets\\smokelogic.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|solutionrelative:assets\\smokelogic.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\assets\\scripts\\scr_playerpackage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\scr_playerpackage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\assets\\smokelogic.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|solutionrelative:assets\\smokelogic.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{05590648-552B-B607-51C2-4C86C7F722E6}|Assembly-CSharp.csproj|E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\assets\\scripts\\scr_playerinput.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -30,8 +34,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "NokWallLogic.cs",
+              "DocumentMoniker": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\Assets\\NokWallLogic.cs",
+              "RelativeDocumentMoniker": "Assets\\NokWallLogic.cs",
+              "ToolTip": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\Assets\\NokWallLogic.cs",
+              "RelativeToolTip": "Assets\\NokWallLogic.cs",
+              "ViewState": "AQIAAA0AAAAAAAAAAAAgwDUAAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-04-11T11:44:27.343Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Document",
               "DocumentIndex": 2,
@@ -46,7 +63,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "SmokeLogic.cs",
               "DocumentMoniker": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\Assets\\SmokeLogic.cs",
               "RelativeDocumentMoniker": "Assets\\SmokeLogic.cs",
@@ -58,7 +75,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "scr_PlayerInput.cs",
               "DocumentMoniker": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\Assets\\Scripts\\scr_PlayerInput.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\scr_PlayerInput.cs",
@@ -70,7 +87,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "scr_GunFire.cs",
               "DocumentMoniker": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\Assets\\Scripts\\scr_GunFire.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\scr_GunFire.cs",
@@ -82,13 +99,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "scr_PlayerController.cs",
               "DocumentMoniker": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\Assets\\Scripts\\scr_PlayerController.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\scr_PlayerController.cs",
               "ToolTip": "E:\\GIT_FILES\\FPSProto2019\\FPSProto2019\\Assets\\Scripts\\scr_PlayerController.cs",
               "RelativeToolTip": "Assets\\Scripts\\scr_PlayerController.cs",
-              "ViewState": "AQIAALIBAAAAAAAAAAAiwOIBAAAAAAAA",
+              "ViewState": "AQIAAMIBAAAAAAAAAAAqwA0CAAALAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-03-28T19:10:10.262Z",
               "EditorCaption": ""
