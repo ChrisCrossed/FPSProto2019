@@ -306,6 +306,8 @@ public class scr_PlayerController : scr_PlayerInput
     {
         WeaponState = WeaponState.Ability;
 
+        ADSCheck(true);
+
         if (playerInput.KM_Ability_1)
             ActivateAbility_AreaSelectionDash();
     }
@@ -456,7 +458,7 @@ public class scr_PlayerController : scr_PlayerInput
     }
 
     float f_LerpPerc_Old;
-    bool ADSCheck()
+    bool ADSCheck(bool usingAbility = false)
     {
         bool GunMoving = false;
 
@@ -465,7 +467,7 @@ public class scr_PlayerController : scr_PlayerInput
         {
             #region Increase/Decrease & Cap weapon lerp timer
             // If the button is held down, determine if weapon switches positions
-            if (playerInput.KM_Mouse_Right)
+            if (playerInput.KM_Mouse_Right && !usingAbility)
             {
                 // If we're less than 100%, move the weapon
                 if (f_WeaponLerpTime < WEAPON_LERP_PERC_MAX)
@@ -510,17 +512,26 @@ public class scr_PlayerController : scr_PlayerInput
             }
             #endregion
 
-            // WeaponState Information
-            if (f_LerpPerc == 0.0f)
-                WeaponState = WeaponState.Normal;
-            else if (f_LerpPerc == 1.0f)
-                WeaponState = WeaponState.ADS;
+            // Ensure weapon is visible if not using an ability
+            go_MDL_WeaponModel.GetComponent<MeshRenderer>().enabled = true;
+            if (!usingAbility)
+            {
+                // WeaponState Information
+                if (f_LerpPerc == 0.0f)
+                    WeaponState = WeaponState.Normal;
+                else if (f_LerpPerc == 1.0f)
+                    WeaponState = WeaponState.ADS;
+                else
+                    WeaponState = WeaponState.Moving;
+            }
             else
-                WeaponState = WeaponState.Moving;
+            {
+                go_MDL_WeaponModel.GetComponent<MeshRenderer>().enabled = false;
+            }
         }
         else
         {
-
+            // Saving for potential future Controller support
         }
 
         return GunMoving;
