@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum WeaponState
 {
@@ -105,8 +106,26 @@ public class scr_PlayerController : scr_PlayerInput
     float f_WeaponFireRateTimer = 0f;
     #endregion
 
+    #region UI Objects
+    GameObject[] UI_Ability_1_Objects;
+    GameObject[] UI_Ability_2_Objects;
+    GameObject[] UI_Ability_3_Objects;
+    GameObject[] UI_Ability_Ult_Objects;
+
+    GameObject[] GO_SnapbackMarker;
+    GameObject GO_SnapbackMarker_Timer_UI;
+    #endregion
+
     // Mouse Camera Rotation Information
     float f_CameraVertRotation;
+
+    enum UI_AbilityObjNumber
+    {
+        UI_AbilityIcon = 0,
+        UI_AbilityPip_Main = 1,
+        UI_Ability_Letter = 2,
+        UI_AbilityPip_Alt = 3
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -130,6 +149,17 @@ public class scr_PlayerController : scr_PlayerInput
         go_HUD_WeaponModel = this_Camera_Object.transform.Find("WeaponMdl").gameObject;
         go_HUD_WeaponPos_Normal = this_Camera_Object.transform.Find("WeapPnt_Normal").gameObject;
         go_HUD_WeaponPos_ADS = this_Camera_Object.transform.Find("WeapPnt_ADS").gameObject;
+        #endregion
+        #region Ability Objects
+        UI_Ability_1_Objects = new GameObject[4];
+        UI_Ability_2_Objects = new GameObject[4];
+        UI_Ability_3_Objects = new GameObject[4];
+        UI_Ability_Ult_Objects = new GameObject[4];
+
+        GO_SnapbackMarker = new GameObject[3];
+        GO_SnapbackMarker_Timer_UI = GameObject.Find("UI_Ability_3_Timer");
+
+        Init_UI_AbilityObjects();
         #endregion
         #region Weapon Cam Objects
         go_WeaponCam = GameObject.Find("WeaponCam").gameObject;
@@ -170,6 +200,22 @@ public class scr_PlayerController : scr_PlayerInput
         v3_ClientSideUpdateVelocity = new Vector3();
     }
 
+    void Init_UI_AbilityObjects()
+    {
+        UI_Ability_3_Objects[(int)UI_AbilityObjNumber.UI_AbilityIcon] = GameObject.Find("UI_Ability_3").gameObject;
+        UI_Ability_3_Objects[(int)UI_AbilityObjNumber.UI_AbilityPip_Main] = GameObject.Find("UI_Ability_3_Pip_1").gameObject;
+        UI_Ability_3_Objects[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt] = GameObject.Find("UI_Ability_3_Pip_2").gameObject;
+        UI_Ability_3_Objects[(int)UI_AbilityObjNumber.UI_Ability_Letter] = GameObject.Find("UI_Text_Ability_3").gameObject;
+
+        GO_SnapbackMarker[0] = GameObject.Find("Marker_Snapback").gameObject;
+        GO_SnapbackMarker[1] = GO_SnapbackMarker[0].transform.Find("mdl_snapback_1").gameObject;
+        GO_SnapbackMarker[2] = GO_SnapbackMarker[0].transform.Find("mdl_snapback_2").gameObject;
+
+        SetSnapbackMarkerState(false);
+        GO_SnapbackMarker_Timer_UI.GetComponent<Image>().fillAmount = 0f;
+        SetAbilityPipState(UI_Ability_3_Objects, 1);
+    }
+
     void AssignGravity( bool b_IsOnGround_ )
     {
         if(b_IsOnGround_)
@@ -207,7 +253,7 @@ public class scr_PlayerController : scr_PlayerInput
             WeaponManager();
         }
 
-        print(WeaponState);
+        AbilityTimerUpdate();
 
         // Mouse Input first
         MouseMoveUpdate();
@@ -302,6 +348,8 @@ public class scr_PlayerController : scr_PlayerInput
 
     // ************************************************************
     #region Abilities
+
+    // Character Name: Nok
     void AbilityManager()
     {
         WeaponState = WeaponState.Ability;
@@ -310,6 +358,50 @@ public class scr_PlayerController : scr_PlayerInput
 
         if (playerInput.KM_Ability_1)
             ActivateAbility_AreaSelectionDash();
+        else if (playerInput.KM_Ability_2)
+            ActivateAbility_WallPlacement();
+        else if (playerInput.KM_Ability_3)
+            ActivateAbility_MarkerSnapback();
+        else if (playerInput.KM_Ability_Ult)
+            ActivateAbility_AreaCleanse();
+    }
+
+    void AbilityTimerUpdate()
+    {
+        if(Timer_UI_Snapback > 0f)
+        {
+            Timer_UI_Snapback -= Time.deltaTime;
+            if(Timer_UI_Snapback < 0f)
+            {
+                Timer_UI_Snapback = 0f;
+
+                // Kick player back to marked position
+                Vector3 snapbackPosition = GO_SnapbackMarker[0].transform.position;
+                snapbackPosition.y += this_Player.gameObject.GetComponent<CapsuleCollider>().height / 2f;
+                this_Player.transform.position = snapbackPosition;
+
+                // Turn off snapback marker
+                SetSnapbackMarkerState(false);
+            }
+
+            float perc = Timer_UI_Snapback / TIMER_UI_SNAPBACK_MAX;
+            float greenAmt = 1.0f;
+            float redAmt = 1.0f;
+
+            if(perc > 0.5f)
+            {
+                redAmt = (1.0f - perc) * 2f;
+            }
+            else
+            {
+                greenAmt = perc * 2f;
+            }
+
+            // Set UI color based on perc.
+            Color newColor = new Color(redAmt, greenAmt, 0f);
+            GO_SnapbackMarker_Timer_UI.GetComponent<Image>().color = newColor;
+            GO_SnapbackMarker_Timer_UI.GetComponent<Image>().fillAmount = perc;
+        }
     }
 
     // 'Left' (Q) Ability
@@ -330,9 +422,76 @@ public class scr_PlayerController : scr_PlayerInput
 
     // 'Free' (C) Ability
     //  --- Marker Snapback
+    float Timer_UI_Snapback = 0f;
+    static float TIMER_UI_SNAPBACK_MAX = 5.0f;
+    int AbilityNumUses_Snapback = 1;
+    static int ABILITY_NUM_USES_SNAPBACK_MAX = 2;
     void ActivateAbility_MarkerSnapback()
     {
+        if(AbilityNumUses_Snapback > 0)
+        {
+            AbilityNumUses_Snapback--;
 
+            #region Manage the UI object within AbilityTimerUpdate
+
+            Timer_UI_Snapback = TIMER_UI_SNAPBACK_MAX;
+            SetAbilityPipState(UI_Ability_3_Objects, AbilityNumUses_Snapback);
+            
+            #endregion
+
+            #region Manage the in-game marker for knowledge
+            // Get player position and raycast to ground
+            RaycastHit _hit;
+            LayerMask layerMask = LayerMask.GetMask("Default");
+            if (Physics.Raycast(gameObject.transform.position + new Vector3(0f, 10f, 0f), Vector3.down, out _hit, 15f, layerMask))
+            {
+                GO_SnapbackMarker[0].gameObject.transform.position = _hit.point;
+                SetSnapbackMarkerState(true);
+            }
+            #endregion
+        }
+
+
+        // GO_SnapbackMarker[0].gameObject.transform.position
+
+        // UI_Ability_1_Objects[(int)UI_AbilityObjNumber.UI_AbilityPip_Main].GetComponent<Image>().color = activeColor;
+    }
+
+    void SetSnapbackMarkerState(bool state)
+    {
+        foreach (GameObject go in GO_SnapbackMarker)
+        {
+            if (go.GetComponent<MeshRenderer>())
+            {
+                go.GetComponent<MeshRenderer>().enabled = state;
+            }
+        }
+    }
+
+    void SetAbilityPipState(GameObject[] UI_MarkerArray, int NumCharges)
+    {
+        Color activeColor = Color.cyan;
+
+        switch (NumCharges)
+        {
+            case 2:
+                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Main].GetComponent<Image>().color = activeColor;
+                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = activeColor;
+                break;
+
+            case 1:
+                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Main].GetComponent<Image>().color = activeColor;
+                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = Color.white;
+                break;
+
+            case 0:
+                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Main].GetComponent<Image>().color = Color.white;
+                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = Color.white;
+                break;
+
+            default:
+                break;
+        }
     }
 
     // Ultimate (X) Ability
