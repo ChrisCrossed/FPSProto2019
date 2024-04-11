@@ -114,6 +114,8 @@ public class scr_PlayerController : scr_PlayerInput
 
     GameObject[] GO_SnapbackMarker;
     GameObject GO_SnapbackMarker_Timer_UI;
+
+    GameObject GO_Dash_Selection_UI;
     #endregion
 
     // Mouse Camera Rotation Information
@@ -158,6 +160,9 @@ public class scr_PlayerController : scr_PlayerInput
 
         GO_SnapbackMarker = new GameObject[3];
         GO_SnapbackMarker_Timer_UI = GameObject.Find("UI_Ability_3_Timer");
+
+        GO_Dash_Selection_UI = GameObject.Find("UI_Ability_1_Selection");
+        GO_Dash_Selection_UI.GetComponent<Image>().enabled = false;
 
         Init_UI_AbilityObjects();
         #endregion
@@ -349,15 +354,17 @@ public class scr_PlayerController : scr_PlayerInput
                     }
                 }
             }
+
+            v3_ClientSideUpdateVelocity.y = currVertVelocity;
+
+            // Assign new velocity to player
+            this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
+
+            v3_ClientSideUpdateVelocity = new Vector3();
         }
         
 
-        v3_ClientSideUpdateVelocity.y = currVertVelocity;
-
-        // Assign new velocity to player
-        this_RigidBody.velocity = v3_ClientSideUpdateVelocity;
-
-        v3_ClientSideUpdateVelocity = new Vector3();
+        
     }
 
     // ************************************************************
@@ -367,6 +374,7 @@ public class scr_PlayerController : scr_PlayerInput
     void AbilityManager()
     {
         PlayerLookingForDashChoice = false;
+        
 
         if (playerInput.KM_Ability_1)
             ActivateAbility_AreaSelectionDash();
@@ -422,24 +430,32 @@ public class scr_PlayerController : scr_PlayerInput
 
         if(AbilityInputOverride)
         {
-
+            DashTowardObject();
         }
     }
 
     // 'Left' (Q) Ability
     // --- Smoke/Wall Dash
     bool PlayerLookingForDashChoice;
+    int AbilityNumUses_Dash = 1;
+    static int ABILITY_NUM_USES_DASH_MAX = 1;
     void ActivateAbility_AreaSelectionDash()
     {
-        WeaponState = WeaponState.Ability;
+        if(AbilityNumUses_Dash > 0)
+        {
+            WeaponState = WeaponState.Ability;
 
-        PlayerLookingForDashChoice = true;
+            PlayerLookingForDashChoice = true;
 
-        ADSCheck(true);
+            ADSCheck(true);
+        }
     }
 
+    Vector3 DashDirectionWorldPosition;
     void DashSelectionLogic()
     {
+        GO_Dash_Selection_UI.GetComponent<Image>().enabled = true;
+
         RaycastHit _hit;
         LayerMask smokeMask = LayerMask.GetMask("Smoke");
         if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward, out _hit, 10f, smokeMask))
@@ -452,6 +468,21 @@ public class scr_PlayerController : scr_PlayerInput
                 PlayerLookingForDashChoice = false;
 
                 AbilityInputOverride = true;
+
+                // Raycast from the 'center' of the object toward the ground to find a final position
+                Vector3 startPos = _hit.collider.gameObject.transform.position;
+                startPos.y += 1.0f;
+                LayerMask groundMask = LayerMask.GetMask("Default");
+
+                if(Physics.Raycast(startPos, Vector3.down, out _hit, 10f, groundMask))
+                {
+                    DashDirectionWorldPosition = _hit.point;
+                    DashDirectionWorldPosition.y += gameObject.GetComponent<CapsuleCollider>().height / 2;
+
+                    SetAbilityPipState(UI_Ability_1_Objects, 0);
+
+                    AbilityNumUses_Dash--;
+                }
             }
         }
     }
@@ -459,7 +490,19 @@ public class scr_PlayerController : scr_PlayerInput
     bool AbilityInputOverride;
     void DashTowardObject()
     {
+        if(Vector3.Distance(gameObject.transform.position, DashDirectionWorldPosition) > 0.2f)
+        {
+            Vector3 direction = DashDirectionWorldPosition - gameObject.transform.position;
+            direction.Normalize();
+            this_RigidBody.velocity = direction * 25f;
+        }
+        else
+        {
+            AbilityInputOverride = false;
+            PlayerLookingForDashChoice = false;
 
+            GO_Dash_Selection_UI.GetComponent<Image>().enabled = false;
+        }
     }
 
 
@@ -684,6 +727,7 @@ public class scr_PlayerController : scr_PlayerInput
     void WeaponManager()
     {
         PlayerLookingForDashChoice = false;
+        GO_Dash_Selection_UI.GetComponent<Image>().enabled = false;
 
         if (WeaponState == WeaponState.Ability)
             WeaponState = WeaponState.Normal;
