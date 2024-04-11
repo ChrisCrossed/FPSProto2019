@@ -363,9 +363,7 @@ public class scr_PlayerController : scr_PlayerInput
     // Character Name: Nok
     void AbilityManager()
     {
-        WeaponState = WeaponState.Ability;
-
-        ADSCheck(true);
+        PlayerLookingForDashChoice = false;
 
         if (playerInput.KM_Ability_1)
             ActivateAbility_AreaSelectionDash();
@@ -413,13 +411,34 @@ public class scr_PlayerController : scr_PlayerInput
             GO_SnapbackMarker_Timer_UI.GetComponent<Image>().color = newColor;
             GO_SnapbackMarker_Timer_UI.GetComponent<Image>().fillAmount = perc;
         }
+    
+        if(PlayerLookingForDashChoice)
+        {
+            DashSelectionLogic();
+        }
     }
 
     // 'Left' (Q) Ability
     // --- Smoke/Wall Dash
+    bool PlayerLookingForDashChoice;
     void ActivateAbility_AreaSelectionDash()
     {
-        
+        WeaponState = WeaponState.Ability;
+
+        PlayerLookingForDashChoice = true;
+
+        ADSCheck(true);
+    }
+
+    void DashSelectionLogic()
+    {
+        RaycastHit _hit;
+        LayerMask smokeMask = LayerMask.GetMask("Smoke");
+        if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward, out _hit, 10f, smokeMask))
+        {
+            GameObject smokeObject = _hit.collider.gameObject.transform.parent.gameObject;
+            smokeObject.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Selected);
+        }
     }
 
 
@@ -427,7 +446,9 @@ public class scr_PlayerController : scr_PlayerInput
     // --- 3 Wall Placement
     void ActivateAbility_WallPlacement()
     {
+        WeaponState = WeaponState.Ability;
 
+        ADSCheck(true);
     }
 
 
@@ -525,7 +546,9 @@ public class scr_PlayerController : scr_PlayerInput
     // --- Area Boardwipe
     void ActivateAbility_AreaCleanse()
     {
+        WeaponState = WeaponState.Ability;
 
+        ADSCheck(true);
     }
 
     #endregion
@@ -639,6 +662,8 @@ public class scr_PlayerController : scr_PlayerInput
 
     void WeaponManager()
     {
+        PlayerLookingForDashChoice = false;
+
         if (WeaponState == WeaponState.Ability)
             WeaponState = WeaponState.Normal;
     }
