@@ -151,8 +151,8 @@ public class scr_PlayerController : scr_PlayerInput
         go_HUD_WeaponPos_ADS = this_Camera_Object.transform.Find("WeapPnt_ADS").gameObject;
         #endregion
         #region Ability Objects
-        UI_Ability_1_Objects = new GameObject[4];
-        UI_Ability_2_Objects = new GameObject[4];
+        UI_Ability_1_Objects = new GameObject[3];
+        UI_Ability_2_Objects = new GameObject[3];
         UI_Ability_3_Objects = new GameObject[4];
         UI_Ability_Ult_Objects = new GameObject[4];
 
@@ -202,6 +202,14 @@ public class scr_PlayerController : scr_PlayerInput
 
     void Init_UI_AbilityObjects()
     {
+        UI_Ability_1_Objects[(int)UI_AbilityObjNumber.UI_AbilityIcon] = GameObject.Find("UI_Ability_1").gameObject;
+        UI_Ability_1_Objects[(int)UI_AbilityObjNumber.UI_AbilityPip_Main] = GameObject.Find("UI_Ability_1_Pip_1").gameObject;
+        UI_Ability_1_Objects[(int)UI_AbilityObjNumber.UI_Ability_Letter] = GameObject.Find("UI_Text_Ability_1").gameObject;
+
+        UI_Ability_2_Objects[(int)UI_AbilityObjNumber.UI_AbilityIcon] = GameObject.Find("UI_Ability_2").gameObject;
+        UI_Ability_2_Objects[(int)UI_AbilityObjNumber.UI_AbilityPip_Main] = GameObject.Find("UI_Ability_2_Pip_1").gameObject;
+        UI_Ability_2_Objects[(int)UI_AbilityObjNumber.UI_Ability_Letter] = GameObject.Find("UI_Text_Ability_2").gameObject;
+
         UI_Ability_3_Objects[(int)UI_AbilityObjNumber.UI_AbilityIcon] = GameObject.Find("UI_Ability_3").gameObject;
         UI_Ability_3_Objects[(int)UI_AbilityObjNumber.UI_AbilityPip_Main] = GameObject.Find("UI_Ability_3_Pip_1").gameObject;
         UI_Ability_3_Objects[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt] = GameObject.Find("UI_Ability_3_Pip_2").gameObject;
@@ -213,6 +221,9 @@ public class scr_PlayerController : scr_PlayerInput
 
         SetSnapbackMarkerState(false);
         GO_SnapbackMarker_Timer_UI.GetComponent<Image>().fillAmount = 0f;
+
+        SetAbilityPipState(UI_Ability_1_Objects, 1);
+        SetAbilityPipState(UI_Ability_2_Objects, 1);
         SetAbilityPipState(UI_Ability_3_Objects, 1);
     }
 
@@ -476,17 +487,33 @@ public class scr_PlayerController : scr_PlayerInput
         {
             case 2:
                 UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Main].GetComponent<Image>().color = activeColor;
-                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = activeColor;
+                
+                // TODO: Hacky way to determine if the ability contains more than one ability charge. Should clean up later.
+                if(NumCharges + 1 == (int)UI_AbilityObjNumber.UI_AbilityPip_Alt)
+                {
+                    UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = activeColor;
+                }
+                
                 break;
 
             case 1:
                 UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Main].GetComponent<Image>().color = activeColor;
-                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = Color.white;
+
+                // TODO: Hacky way to determine if the ability contains more than one ability charge. Should clean up later.
+                if (NumCharges + 1 == (int)UI_AbilityObjNumber.UI_AbilityPip_Alt)
+                {
+                    UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = Color.white;
+                }
                 break;
 
             case 0:
                 UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Main].GetComponent<Image>().color = Color.white;
-                UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = Color.white;
+
+                // TODO: Hacky way to determine if the ability contains more than one ability charge. Should clean up later.
+                if (NumCharges + 1 == (int)UI_AbilityObjNumber.UI_AbilityPip_Alt)
+                {
+                    UI_MarkerArray[(int)UI_AbilityObjNumber.UI_AbilityPip_Alt].GetComponent<Image>().color = Color.white;
+                }
                 break;
 
             default:
