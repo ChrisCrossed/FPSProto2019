@@ -229,6 +229,25 @@ public struct PlayerInput
         internal get { return _Button_Strafe_Right; }
     }
 
+    #region Weapon selection
+    public bool KM_Button_Weapon_Primary
+    {
+        set { _Button_Weapon_Primary = value; }
+        internal get { return _Button_Weapon_Primary; }
+    }
+    public bool KM_Button_Weapon_Secondary
+    {
+        set { _Button_Weapon_Secondary = value; }
+        internal get { return _Button_Weapon_Secondary; }
+    }
+    public bool KM_Button_Weapon_Melee
+    {
+        set { _Button_Weapon_Melee = value; }
+        internal get { return _Button_Weapon_Melee; }
+    }
+
+    #endregion
+
     public bool KM_Button_Jump
     {
         set { _Button_Jump = value; }
@@ -258,6 +277,26 @@ public struct PlayerInput
     {
         set { _Button_Mouse_Right = value; }
         internal get { return _Button_Mouse_Right; }
+    }
+    public bool KM_Ability_1
+    {
+        set { _Button_Ability_1 = value; }
+        internal get { return _Button_Ability_1; }
+    }
+    public bool KM_Ability_2
+    {
+        set { _Button_Ability_2 = value; }
+        internal get { return _Button_Ability_2; }
+    }
+    public bool KM_Ability_3
+    {
+        set { _Button_Ability_3 = value; }
+        internal get { return _Button_Ability_3; }
+    }
+    public bool KM_Ability_Ult
+    {
+        set { _Button_Ability_Ult = value; }
+        internal get { return _Button_Ability_Ult; }
     }
     #endregion
 
@@ -373,6 +412,19 @@ public class scr_PlayerInput : MonoBehaviour
                 playerInput.KM_Strafe_Right = true;
             #endregion
 
+            #region Weapon Selection
+            playerInput.KM_Button_Weapon_Primary = false;
+            playerInput.KM_Button_Weapon_Secondary = false;
+            playerInput.KM_Button_Weapon_Melee = false;
+
+            if (Input.GetKey(KeyCode.Alpha1))
+                playerInput.KM_Button_Weapon_Primary = true;
+            if (Input.GetKey(KeyCode.Alpha2))
+                playerInput.KM_Button_Weapon_Secondary = true;
+            if (Input.GetKey(KeyCode.Alpha3))
+                playerInput.KM_Button_Weapon_Melee = true;
+            #endregion
+
             #region Alternate Buttons
             playerInput.KM_Button_Jump = false;
             playerInput.KM_Button_Crouch = false;
@@ -386,6 +438,22 @@ public class scr_PlayerInput : MonoBehaviour
             
             if (Input.GetKey(KeyCode.LeftShift))
                 playerInput.KM_Button_Walk = true;
+            #endregion
+
+            #region Player Abilities
+            playerInput.KM_Ability_1 = false;
+            playerInput.KM_Ability_2 = false;
+            playerInput.KM_Ability_3 = false;
+            playerInput.KM_Ability_Ult = false;
+
+            if (Input.GetKey(KeyCode.Q))
+                playerInput.KM_Ability_1 = true;
+            if (Input.GetKey(KeyCode.E))
+                playerInput.KM_Ability_2 = true;
+            if (Input.GetKey(KeyCode.C))
+                playerInput.KM_Ability_3 = true;
+            if (Input.GetKey(KeyCode.X))
+                playerInput.KM_Ability_Ult = true;
             #endregion
 
             #region Mouse Input

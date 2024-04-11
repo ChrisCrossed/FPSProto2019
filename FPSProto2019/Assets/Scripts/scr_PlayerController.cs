@@ -6,6 +6,7 @@ public enum WeaponState
 {
     Normal,
     ADS,
+    Ability,
     Moving
 }
 
@@ -73,7 +74,7 @@ public class scr_PlayerController : scr_PlayerInput
     private Rigidbody groundRigidbody;
 
     GroundTouchState GroundState;
-    static float JUMP_VELOCITY = 7f;
+    static float JUMP_VELOCITY = 4f;
     #endregion
 
     #region Weapon Position Lerp
@@ -196,6 +197,18 @@ public class scr_PlayerController : scr_PlayerInput
         // Get player input values
         base.UpdatePlayerInput();
 
+        // Check if an ability was selected
+        if(playerInput.KM_Ability_1 || playerInput.KM_Ability_2 || playerInput.KM_Ability_3 || playerInput.KM_Ability_Ult)
+        {
+            AbilityManager();
+        }
+        else if(playerInput.KM_Button_Weapon_Primary || playerInput.KM_Button_Weapon_Secondary || playerInput.KM_Button_Weapon_Melee)
+        {
+            WeaponManager();
+        }
+
+        print(WeaponState);
+
         // Mouse Input first
         MouseMoveUpdate();
 
@@ -219,10 +232,15 @@ public class scr_PlayerController : scr_PlayerInput
         v3_ClientSideUpdateVelocity += (this_RigidBody.transform.rotation * tempVel) * Time.deltaTime;
         #endregion
 
-        // Determine if gun is switching positions
-        bool weaponMoving = ADSCheck();
+        // State Ability/Weapon Selection
+        if(WeaponState != WeaponState.Ability)
+        {
+            // Determine if gun is switching positions
+            bool weaponMoving = ADSCheck();
 
-        if (!weaponMoving) FireGunCheck();
+            if (!weaponMoving) FireGunCheck();
+        }
+        
     }
 
     bool PlayerCanJump;
@@ -249,7 +267,7 @@ public class scr_PlayerController : scr_PlayerInput
 
         // GroundSnap Timer after user jumps.
         bool snappedToGround = SnapToGround(_hit);
-        print(snappedToGround);
+
         if (snappedToGround)
         {
             if (playerInput.KM_Button_Jump)
@@ -274,9 +292,6 @@ public class scr_PlayerController : scr_PlayerInput
             }
         }
 
-        
-       
-
         v3_ClientSideUpdateVelocity.y = currVertVelocity;
 
         // Assign new velocity to player
@@ -284,6 +299,49 @@ public class scr_PlayerController : scr_PlayerInput
 
         v3_ClientSideUpdateVelocity = new Vector3();
     }
+
+    // ************************************************************
+    #region Abilities
+    void AbilityManager()
+    {
+        WeaponState = WeaponState.Ability;
+
+        if (playerInput.KM_Ability_1)
+            ActivateAbility_AreaSelectionDash();
+    }
+
+    // 'Left' (Q) Ability
+    // --- Smoke/Wall Dash
+    void ActivateAbility_AreaSelectionDash()
+    {
+        
+    }
+
+
+    // 'Right' (E) Ability
+    // --- 3 Wall Placement
+    void ActivateAbility_WallPlacement()
+    {
+
+    }
+
+
+    // 'Free' (C) Ability
+    //  --- Marker Snapback
+    void ActivateAbility_MarkerSnapback()
+    {
+
+    }
+
+    // Ultimate (X) Ability
+    // --- Area Boardwipe
+    void ActivateAbility_AreaCleanse()
+    {
+
+    }
+
+    #endregion
+    // ************************************************************
 
 
     void MouseMoveUpdate()
@@ -391,7 +449,11 @@ public class scr_PlayerController : scr_PlayerInput
         return isCrouching;
     }
 
-    
+    void WeaponManager()
+    {
+        if (WeaponState == WeaponState.Ability)
+            WeaponState = WeaponState.Normal;
+    }
 
     float f_LerpPerc_Old;
     bool ADSCheck()
