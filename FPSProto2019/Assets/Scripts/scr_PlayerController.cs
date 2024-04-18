@@ -468,11 +468,26 @@ public class scr_PlayerController : scr_PlayerInput
         GO_Dash_Selection_UI.GetComponent<Image>().enabled = true;
 
         RaycastHit _hit;
-        LayerMask smokeMask = LayerMask.GetMask("Smoke");
-        if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward, out _hit, 10f, smokeMask))
+        LayerMask abilityMask = LayerMask.GetMask("Smoke", "NokWall");
+        if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward, out _hit, 10f, abilityMask))
         {
-            GameObject smokeObject = _hit.collider.gameObject.transform.parent.gameObject;
-            smokeObject.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Selected);
+            GameObject abilityObject;
+            bool isWall = false;
+
+            if (_hit.transform.gameObject.layer == LayerMask.NameToLayer("Smoke"))
+            {
+                abilityObject = _hit.collider.gameObject.transform.parent.gameObject;
+
+                abilityObject.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Selected);
+            }
+            else if(_hit.transform.gameObject.layer == LayerMask.NameToLayer("NokWall"))
+            {
+                abilityObject = _hit.collider.gameObject;
+                isWall = true;
+            }
+
+
+            
 
             if(playerInput.KM_Mouse_Left)
             {
@@ -483,6 +498,16 @@ public class scr_PlayerController : scr_PlayerInput
                 // Raycast from the 'center' of the object toward the ground to find a final position
                 Vector3 startPos = _hit.collider.gameObject.transform.position;
                 startPos.y += 1.0f;
+
+                if(isWall)
+                {
+                    Vector3 playerForwardDir = _hit.transform.position - gameObject.transform.position;
+                    playerForwardDir.Normalize();
+                    startPos += playerForwardDir * 2.0f;
+
+                    _hit.transform.gameObject.GetComponent<NokWallLogic>().SetWallState(NokWallState.Shattered);
+                }
+
                 LayerMask groundMask = LayerMask.GetMask("Default");
 
                 if(Physics.Raycast(startPos, Vector3.down, out _hit, 10f, groundMask))

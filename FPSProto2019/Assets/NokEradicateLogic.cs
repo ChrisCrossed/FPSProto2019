@@ -65,6 +65,10 @@ public class NokEradicateLogic : MonoBehaviour
                 other.gameObject.transform.parent.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Disabled);
                 // other.gameObject.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Disabled);
             }
+            if( other.gameObject.GetComponent<NokWallLogic>() )
+            {
+                other.gameObject.GetComponent<NokWallLogic>().SetWallState(NokWallState.Disabled);
+            }
         }
     }
 
@@ -81,8 +85,6 @@ public class NokEradicateLogic : MonoBehaviour
                 isActive = false;
 
                 DisableEradicateObject();
-
-                
             }
             else
             {
@@ -96,7 +98,7 @@ public class NokEradicateLogic : MonoBehaviour
                 Color objMatColor =  objMat.color;
 
                 // Converts from Full Alpha to SemiTransparent
-                objMatColor.a = Mathf.Clamp(.5f, 1.0f, tempPerc);
+                objMatColor.a = 1 - Mathf.Clamp(tempPerc, .25f, 0.75f);
                 objMat.color = objMatColor;
 
                 // Radius is set based on Max Time.

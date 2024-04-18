@@ -47,11 +47,22 @@ public class NokWallLogic : MonoBehaviour
 
             case NokWallState.Shattered:
                 gameObject.GetComponent<MeshRenderer>().enabled = false;
+                gameObject.GetComponent<BoxCollider>().enabled = false;
                 break;
             
             default:
                 break;
         }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        /*
+        if(collision.gameObject.tag == "Player")
+        {
+            SetWallState(NokWallState.Shattered);
+        }
+        */
     }
 
     // Update is called once per frame
