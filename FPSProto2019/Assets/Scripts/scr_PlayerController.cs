@@ -118,6 +118,8 @@ public class scr_PlayerController : scr_PlayerInput
     GameObject GO_Dash_Selection_UI;
 
     GameObject GO_NokWallParent;
+
+    float QuitTimer;
     #endregion
 
     // Mouse Camera Rotation Information
@@ -439,7 +441,7 @@ public class scr_PlayerController : scr_PlayerInput
 
         if(GO_NokWallParent.activeSelf)
         {
-            print("Active");
+            // print("Active");
         }
     }
 
@@ -624,6 +626,12 @@ public class scr_PlayerController : scr_PlayerInput
         WeaponState = WeaponState.Ability;
 
         ADSCheck(true);
+
+        GameObject nokErad = GameObject.Find("NokEradicate").gameObject;
+        Vector3 newPos = gameObject.transform.position;
+        newPos.y += -(gameObject.GetComponent<CapsuleCollider>().height / 2f);
+
+        nokErad.GetComponent<NokEradicateLogic>().UseAbility_NokEradicate(newPos);
     }
 
     #endregion
