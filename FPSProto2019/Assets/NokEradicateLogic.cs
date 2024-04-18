@@ -33,7 +33,7 @@ public class NokEradicateLogic : MonoBehaviour
     List<GameObject> AbilityObjectsTouched;
     public void UseAbility_NokEradicate(Vector3 _position)
     {
-        AbilityObjectsTouched = new List<GameObject>();
+        
 
         // Enable
         isActive = true;
@@ -53,15 +53,19 @@ public class NokEradicateLogic : MonoBehaviour
         // Determine if entity is 'Utility'
         if(other.CompareTag("AbilityObject"))
         {
-            if (!AbilityObjectsTouched.Contains(other.gameObject))
-            {
-                AbilityObjectsTouched.Add(other.gameObject);
+            print(other.gameObject.name);
 
-                
+            // Add to list of objects to cycle through
+            if (other.gameObject.GetComponent<IceWall_Logic>())
+            {
+                other.gameObject.GetComponent<IceWall_Logic>().DestroyAbility();
+            }
+            if (other.gameObject.layer == LayerMask.NameToLayer("Smoke"))
+            {
+                other.gameObject.transform.parent.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Disabled);
+                // other.gameObject.GetComponent<SmokeLogic>().SetSmokeState(SmokeState.Disabled);
             }
         }
-
-        // Add to 
     }
 
     // Update is called once per frame

@@ -67,7 +67,7 @@ public class SmokeLogic : MonoBehaviour
                 break;
 
             case SmokeState.Disabled:
-
+                SmokeState_Disabled();
                 break;
 
             case SmokeState.Normal:

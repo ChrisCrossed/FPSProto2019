@@ -161,7 +161,7 @@ GameObject:
   - component: {fileID: 8207387504524806705}
   m_Layer: 10
   m_Name: Smoke_Outside
-  m_TagString: Untagged
+  m_TagString: AbilityObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
