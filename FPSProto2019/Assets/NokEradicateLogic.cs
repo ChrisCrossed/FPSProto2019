@@ -25,10 +25,16 @@ public class NokEradicateLogic : MonoBehaviour
         gameObject.transform.position = Vector3.zero;
 
         gameObject.GetComponent<MeshRenderer>().enabled = false;
+        gameObject.transform.Find("Sphere").gameObject.GetComponent<MeshRenderer>().enabled = false;
+
+        gameObject.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
     }
 
+    List<GameObject> AbilityObjectsTouched;
     public void UseAbility_NokEradicate(Vector3 _position)
     {
+        AbilityObjectsTouched = new List<GameObject>();
+
         // Enable
         isActive = true;
 
@@ -41,9 +47,19 @@ public class NokEradicateLogic : MonoBehaviour
         
     }
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
+        
         // Determine if entity is 'Utility'
+        if(other.CompareTag("AbilityObject"))
+        {
+            if (!AbilityObjectsTouched.Contains(other.gameObject))
+            {
+                AbilityObjectsTouched.Add(other.gameObject);
+
+                
+            }
+        }
 
         // Add to 
     }
